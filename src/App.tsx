@@ -2,10 +2,13 @@ import React from "react";
 import { ChakraProvider } from "@chakra-ui/react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
-import LoginPage from "./pages/Login";
-import SignupPage from "./pages/Signup";
+// import SigninPage from "./pages/Signin";
+// import SignupPage from "./pages/Signup";
 import PrivateRoute from "./component/Auth/PrivateRoute";
 import DashboardPage from "./pages/Dashboard";
+import SigninWithRedirect from "./component/Auth/SigninWithRedirect";
+import SignupWithRedirect from "./component/Auth/SignupWithRedirect";
+import ForgotPasswordWithRedirect from "./component/Auth/ForgotPasswordWithRedirect";
 
 const App: React.FC = () => {
   return (
@@ -13,8 +16,9 @@ const App: React.FC = () => {
       <Router>
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/signin" element={<SigninWithRedirect />} />
+          <Route path="/signup" element={<SignupWithRedirect />} />
+          <Route path="/forgot-password" element={<ForgotPasswordWithRedirect />} />
           <Route
             path="/dashboard"
             element={

@@ -2,12 +2,13 @@ import React from "react";
 import { Button } from "@chakra-ui/react";
 import { auth } from "../../firebase/firebaseAuth";
 import { FirebaseError } from "firebase/app";
-
+import { useNavigate } from "react-router-dom";
 const Logout: React.FC = () => {
+  const navigate = useNavigate();
   const handleLogout = async () => {
     try {
       await auth.signOut();
-      // handle successful logout (e.g., redirect to login page)
+      navigate("/dashboard "); // handle successful logout (e.g., redirect to login page)
     } catch (error: unknown) {
       if (error instanceof FirebaseError) {
         console.error("Firebase Error logging out:", error.message);
