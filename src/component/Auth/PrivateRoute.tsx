@@ -3,6 +3,7 @@ import React from 'react';
 import { Navigate } from 'react-router-dom';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { auth } from '../../firebase/firebaseAuth';
+import Sidebar from '../Sidebar/SideBar';
 
 interface PrivateRouteProps {
   children: React.ReactNode;
@@ -19,7 +20,10 @@ const PrivateRoute: React.FC<PrivateRouteProps> = ({ children }) => {
     return <Navigate to="/signin" />;
   }
 
-  return <>{children}</>;
+  return <>
+  <Sidebar />
+  {children}
+  </>;
 };
 
 export default PrivateRoute;

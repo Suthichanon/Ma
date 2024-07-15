@@ -6,7 +6,8 @@ const DashboardPage: React.FC = () => {
     <div>
       Dashboard
       <div>
-        <Logout />
+          {/* <Logout /> */}
+        
       </div>
     </div>
   );

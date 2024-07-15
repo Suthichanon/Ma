@@ -9,6 +9,7 @@ import DashboardPage from "./pages/Dashboard";
 import SigninWithRedirect from "./component/Auth/SigninWithRedirect";
 import SignupWithRedirect from "./component/Auth/SignupWithRedirect";
 import ForgotPasswordWithRedirect from "./component/Auth/ForgotPasswordWithRedirect";
+import Sidebar from "./component/Sidebar/SideBar";
 
 const App: React.FC = () => {
   return (
@@ -18,11 +19,15 @@ const App: React.FC = () => {
           <Route path="/" element={<Home />} />
           <Route path="/signin" element={<SigninWithRedirect />} />
           <Route path="/signup" element={<SignupWithRedirect />} />
-          <Route path="/forgot-password" element={<ForgotPasswordWithRedirect />} />
+          <Route
+            path="/forgot-password"
+            element={<ForgotPasswordWithRedirect />}
+          />
           <Route
             path="/dashboard"
             element={
               <PrivateRoute>
+                <Sidebar />
                 <DashboardPage />
               </PrivateRoute>
             }
