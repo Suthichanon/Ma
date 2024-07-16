@@ -1,103 +1,392 @@
-import React, { useState } from "react";
-import { Flex, Box, Image, Button, Text } from "@chakra-ui/react";
-import { ExternalLinkIcon } from "@chakra-ui/icons";
+import { useState, ReactNode } from "react";
+import { Flex, Box, Button, Text, Image } from "@chakra-ui/react";
+import { ColorSideBar, ColorText } from "../templatecolor";
 
-const Sidebar = () => {
-  const [showRightSidebar, setShowRightSidebar] = useState(false);
+interface SidebarProps {
+  children?: ReactNode;
+}
 
-  const toggleRightSidebar = () => {
-    setShowRightSidebar(!showRightSidebar);
+const Sidebar: React.FC<SidebarProps> = () => {
+  const initialShowRightSidebar = Array.from({ length: 5 }, () => false); //Config open btn-sidebar
+
+  const [showRightSidebar, setShowRightSidebar] = useState<boolean[]>(
+    initialShowRightSidebar
+  );
+
+  const toggleRightSidebar = (index: number) => {
+    setShowRightSidebar((prev) =>
+      prev.map((show, i) => (i === index ? !show : false))
+    );
   };
 
   return (
-    <Flex as="aside" className="flex">
+    <Flex className="flex">
       {/* Left Sidebar */}
-      <Flex 
+      <Flex
         flexDirection="column"
         alignItems="center"
-        width="16"
+        width="80px"
         height="100vh"
-        py="8"
-        bg="#FC0A18"
-        _dark={{ bg: "gray.900", border: "gray.700" }}
+        py="20"
+        bg={ColorSideBar.Sidebar}
+        // _dark={{ bg: "red.900", border: "red.700" }}
       >
-        {/* Example Chakra UI Button */}
-        <Button
-          p="1.5"
-          color="gray.500"
-          _hover={{ bg: "gray.100" }}
-          _dark={{ color: "gray.400", _hover: { bg: "gray.800" } }}
-          onClick={toggleRightSidebar}
+        {/* DashBoard Menu */}
+        <Flex
+          w={"100%"}
+          justifyContent={"center"}
+          alignContent={"center"}
+          alignItems={"center"}
+          mb={8}
         >
-          <ExternalLinkIcon w="6" h="6" />
-        </Button>
-        {/* Add more buttons as needed */}
+          <Button
+            h={"65px"}
+            py={0}
+            bg={ColorSideBar.Sidebar}
+            onClick={() => toggleRightSidebar(0)}
+            _hover={{ bg: ColorSideBar.BtnSideBarHover }}
+            borderRadius={"12px"}
+          >
+            <Image src="/StaticIcon.png" />
+          </Button>
+        </Flex>
+
+        {/* Customer Menu */}
+        <Flex
+          w={"100%"}
+          justifyContent={"center"}
+          alignContent={"center"}
+          alignItems={"center"}
+          mb={8}
+        >
+          <Button
+            h={"65px"}
+            py={0}
+            bg={ColorSideBar.Sidebar}
+            onClick={() => toggleRightSidebar(1)}
+            _hover={{ bg: ColorSideBar.BtnSideBarHover }}
+            borderRadius={"12px"}
+          >
+            <Image src="CustomersIcon.png" />
+          </Button>
+        </Flex>
+
+        {/* Projects Menu */}
+        <Flex
+          w={"100%"}
+          justifyContent={"center"}
+          alignContent={"center"}
+          alignItems={"center"}
+          mb={8}
+        >
+          <Button
+            h={"65px"}
+            py={0}
+            bg={ColorSideBar.Sidebar}
+            onClick={() => toggleRightSidebar(2)}
+            _hover={{ bg: ColorSideBar.BtnSideBarHover }}
+            borderRadius={"12px"}
+          >
+            <Image src="ProjectsIcon.png" />
+          </Button>
+        </Flex>
+
+        {/* Support Tickets Menu */}
+        <Flex
+          w={"100%"}
+          justifyContent={"center"}
+          alignContent={"center"}
+          alignItems={"center"}
+          mb={8}
+        >
+          <Button
+            h={"65px"}
+            py={0}
+            bg={ColorSideBar.Sidebar}
+            onClick={() => toggleRightSidebar(3)}
+            _hover={{ bg: ColorSideBar.BtnSideBarHover }}
+            borderRadius={"12px"}
+          >
+            <Image src="SupTicketsIcon.png" />
+          </Button>
+        </Flex>
+
+        {/* Support Agent Menu */}
+        <Flex
+          w={"100%"}
+          justifyContent={"center"}
+          alignContent={"center"}
+          alignItems={"center"}
+          mb={8}
+        >
+          <Button
+            h={"65px"}
+            py={0}
+            bg={ColorSideBar.Sidebar}
+            onClick={() => toggleRightSidebar(4)}
+            _hover={{ bg: ColorSideBar.BtnSideBarHover }}
+            borderRadius={"12px"}
+          >
+            <Image src="/ServiceAgentsIcon.png" />
+          </Button>
+        </Flex>
       </Flex>
 
       {/* Right Sidebar */}
+      {/* DashBoard */}
       <Box
         h="100vh"
         py="8"
         overflowY="auto"
-        bg="white"
-        // borderLeft="1px"
+        bg={ColorSideBar.rSidebar}
         borderRight="1px"
         w="60"
-        display={showRightSidebar ? "block" : "none"}
-        borderColor={'#E2E8E8'}
+        display={showRightSidebar[0] ? "block" : "none"}
+        borderColor={"#E2E8E8"}
       >
         <Text
           px="5"
-          fontSize="lg"
-          fontWeight="medium"
-          color="gray.800"
+          fontSize="20px"
+          fontWeight="Bold"
+          color={ColorText.BlackText}
           _dark={{ color: "white" }}
+          textTransform={"uppercase"}
         >
-          Accounts
+          Dashboard
         </Text>
 
-        {/* Example of Chakra UI Button Group */}
-        <Box mt="8">
+        {/* Option in Menu */}
+        <Flex w={"100%"} mt="8">
           {/* Example of Chakra UI Button */}
           <Button
             display="flex"
             alignItems="center"
             w="full"
+            mx={2}
+            h={"60px"}
             px="5"
             py="2"
-            _hover={{ bg: "gray.100" }}
+            _hover={{ bg: ColorSideBar.BtnSideBarHover }}
           >
-            <Image
-              src="https://example.com/profile-image.jpg"
-              alt=""
-              w="8"
-              h="8"
-              borderRadius="full"
-              objectFit="cover"
-            />
-
-            <Box ml="2">
-              <Text
-                fontSize="sm"
-                fontWeight="medium"
-                color="gray.700"
-                textTransform="capitalize"
-                _dark={{ color: "white" }}
-              >
-                Mia John
-              </Text>
-              <Text
-                fontSize="xs"
-                color="gray.500"
-                _dark={{ color: "gray.400" }}
-              >
-                11.2 Followers
-              </Text>
-            </Box>
+            <Text w={"full"} textAlign={"left"}>
+              Dashboard
+            </Text>
           </Button>
 
           {/* Add more Chakra UI Button components as needed */}
-        </Box>
+        </Flex>
+      </Box>
+
+      {/* Customer */}
+      <Box
+        h="100vh"
+        py="8"
+        overflowY="auto"
+        bg={ColorSideBar.rSidebar}
+        borderRight="1px"
+        w="60"
+        display={showRightSidebar[1] ? "block" : "none"}
+        borderColor={"#E2E8E8"}
+      >
+        <Text
+          px="5"
+          fontSize="lg"
+          fontWeight="medium"
+          color={ColorText.BlackText}
+          _dark={{ color: "white" }}
+          textTransform={"uppercase"}
+        >
+          Customers
+        </Text>
+
+        {/* Option in Menu */}
+        <Flex flexDirection={"column"} mt="8">
+          {/* Example of Chakra UI Button */}
+          <Button
+            display="flex"
+            alignItems="center"
+            w="full"
+            h={"60px"}
+            px="5"
+            py="2"
+            _hover={{ bg: ColorSideBar.BtnSideBarHover }}
+          >
+            <Text w={"full"} textAlign={"left"}>
+              Customer
+            </Text>
+          </Button>
+          <Button
+            display="flex"
+            alignItems="center"
+            w="full"
+            h={"60px"}
+            px="5"
+            py="2"
+            _hover={{ bg: ColorSideBar.BtnSideBarHover }}
+          >
+            <Text w={"full"} textAlign={"left"}>
+              Customer Portal
+            </Text>
+          </Button>
+
+          {/* Add more Chakra UI Button components as needed */}
+        </Flex>
+      </Box>
+
+      {/* Projects */}
+      <Box
+        h="100vh"
+        py="8"
+        overflowY="auto"
+        bg={ColorSideBar.rSidebar}
+        borderRight="1px"
+        w="60"
+        display={showRightSidebar[2] ? "block" : "none"}
+        borderColor={"#E2E8E8"}
+      >
+        <Text
+          px="5"
+          fontSize="lg"
+          fontWeight="medium"
+          color={ColorText.BlackText}
+          _dark={{ color: "white" }}
+          textTransform={"uppercase"}
+        >
+          Projects
+        </Text>
+
+        {/* Option in Menu */}
+        <Flex flexDirection={"column"} mt="8">
+          {/* Example of Chakra UI Button */}
+          <Button
+            display="flex"
+            alignItems="center"
+            w="full"
+            h={"60px"}
+            px="5"
+            py="2"
+            _hover={{ bg: ColorSideBar.BtnSideBarHover }}
+          >
+            <Text w={"full"} textAlign={"left"}>
+              Add Project
+            </Text>
+          </Button>
+          <Button
+            display="flex"
+            alignItems="center"
+            w="full"
+            h={"60px"}
+            px="5"
+            py="2"
+            _hover={{ bg: ColorSideBar.BtnSideBarHover }}
+          >
+            <Text w={"full"} textAlign={"left"}>
+              Maintenance Agreement
+            </Text>
+          </Button>
+
+          {/* Add more Chakra UI Button components as needed */}
+        </Flex>
+      </Box>
+
+      {/* Support Ticket */}
+      <Box
+        h="100vh"
+        py="8"
+        overflowY="auto"
+        bg={ColorSideBar.rSidebar}
+        borderRight="1px"
+        w="60"
+        display={showRightSidebar[3] ? "block" : "none"}
+        borderColor={"#E2E8E8"}
+      >
+        <Text
+          px="5"
+          fontSize="lg"
+          fontWeight="medium"
+          color={ColorText.BlackText}
+          _dark={{ color: "white" }}
+          textTransform={"uppercase"}
+        >
+          Support Tickets
+        </Text>
+
+        {/* Option in Menu */}
+        <Flex flexDirection={"column"} mt="8">
+          {/* Example of Chakra UI Button */}
+          <Button
+            display="flex"
+            alignItems="center"
+            w="full"
+            h={"60px"}
+            px="5"
+            py="2"
+            _hover={{ bg: ColorSideBar.BtnSideBarHover }}
+          >
+            <Text w={"full"} textAlign={"left"}>
+              Add Support Ticket
+            </Text>
+          </Button>
+          <Button
+            display="flex"
+            alignItems="center"
+            w="full"
+            h={"60px"}
+            px="5"
+            py="2"
+            _hover={{ bg: ColorSideBar.BtnSideBarHover }}
+          >
+            <Text w={"full"} textAlign={"left"}>
+              Customer Portal
+            </Text>
+          </Button>
+
+          {/* Add more Chakra UI Button components as needed */}
+        </Flex>
+      </Box>
+
+      {/* Support Agent */}
+      <Box
+        h="100vh"
+        py="8"
+        overflowY="auto"
+        bg={ColorSideBar.rSidebar}
+        borderRight="1px"
+        w="60"
+        display={showRightSidebar[4] ? "block" : "none"}
+        borderColor={"#E2E8E8"}
+      >
+        <Text
+          px="5"
+          fontSize="lg"
+          fontWeight="medium"
+          color={ColorText.BlackText}
+          _dark={{ color: "white" }}
+          textTransform={"uppercase"}
+        >
+          Support Tickets
+        </Text>
+
+        {/* Option in Menu */}
+        <Flex flexDirection={"column"} mt="8">
+          {/* Example of Chakra UI Button */}
+          <Button
+            display="flex"
+            alignItems="center"
+            w="full"
+            h={"60px"}
+            px="5"
+            py="2"
+            _hover={{ bg: ColorSideBar.BtnSideBarHover }}
+          >
+            <Text w={"full"} textAlign={"left"}>
+              Manage account
+            </Text>
+          </Button>
+
+          {/* Add more Chakra UI Button components as needed */}
+        </Flex>
+        {/* SUPPORT AGENT */}
       </Box>
     </Flex>
   );

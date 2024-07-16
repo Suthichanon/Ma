@@ -1,5 +1,5 @@
 import React from "react";
-import { ChakraProvider } from "@chakra-ui/react";
+import { ChakraProvider, extendTheme } from "@chakra-ui/react";
 import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
 import Home from "./pages/Home";
 // import SigninPage from "./pages/Signin";
@@ -10,10 +10,18 @@ import SigninWithRedirect from "./component/Auth/SigninWithRedirect";
 import SignupWithRedirect from "./component/Auth/SignupWithRedirect";
 import ForgotPasswordWithRedirect from "./component/Auth/ForgotPasswordWithRedirect";
 import Sidebar from "./component/Sidebar/SideBar";
+import { Flex } from "@chakra-ui/react";
+
+const theme = extendTheme({
+  fonts: {
+    heading: `'Inter', sans-serif`,
+    body: `'Inter', sans-serif`,
+  },
+});
 
 const App: React.FC = () => {
   return (
-    <ChakraProvider>
+    <ChakraProvider theme={theme}>
       <Router>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -27,8 +35,10 @@ const App: React.FC = () => {
             path="/dashboard"
             element={
               <PrivateRoute>
-                <Sidebar />
-                <DashboardPage />
+                <Flex>
+                  <Sidebar />
+                  <DashboardPage />
+                </Flex>
               </PrivateRoute>
             }
           />

@@ -19,4 +19,11 @@ const FieldColor = {
   Border: "#",
 };
 
-export { ColorBtn, ColorText, FieldColor };
+const ColorSideBar ={
+  Sidebar: "#FC0A18",
+  BtnSideBar: "#262626",
+  BtnSideBarHover: "#262626",
+  rSidebar: '#ffffff'
+}
+
+export { ColorBtn, ColorText, FieldColor,ColorSideBar };
