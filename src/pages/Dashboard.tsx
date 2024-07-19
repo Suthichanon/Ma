@@ -27,7 +27,7 @@ export default function CallToActionWithAnnotation() {
             fontSize={{ base: "2xl", sm: "4xl", md: "6xl" }}
             lineHeight={"110%"}
           >
-            Make money from <br />
+            Dashboard <br />
             <Text as={"span"} color={"green.400"}>
               your audience
             </Text>

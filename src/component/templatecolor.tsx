@@ -23,7 +23,8 @@ const ColorSideBar ={
   Sidebar: "#FC0A18",
   BtnSideBar: "#262626",
   BtnSideBarHover: "#262626",
-  rSidebar: '#ffffff'
+  rSidebar: '#ffffff',
+  BtnSideBarActive: "#262626"
 }
 
 export { ColorBtn, ColorText, FieldColor,ColorSideBar };

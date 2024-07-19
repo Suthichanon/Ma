@@ -12,7 +12,7 @@ const withAuthRedirect = (Component: React.ComponentType) => {
 
     React.useEffect(() => {
       if (loading && user) {
-        navigate("/dashboard");
+        navigate("/home");
       }
     }, [user, loading, navigate]);
 
@@ -21,7 +21,7 @@ const withAuthRedirect = (Component: React.ComponentType) => {
     }
 
     if (user) {
-      return <Navigate to="/dashboard" />; // Prevent rendering the component if user is logged in
+      return <Navigate to="/home" />; // Prevent rendering the component if user is logged in
     }
 
     return <Component />;

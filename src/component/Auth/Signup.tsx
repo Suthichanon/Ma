@@ -14,7 +14,7 @@ const Signup: React.FC = () => {
   const handleSignup = async () => {
     try {
       await createUserWithEmailAndPassword(auth, email, password);
-      navigate("/dashboard")
+      navigate("/")
     } catch (error) {
       if (error instanceof FirebaseError) {
         setError(error.message);

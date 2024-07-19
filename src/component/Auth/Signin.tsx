@@ -25,7 +25,7 @@ const SignIn: React.FC = () => {
     event.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      navigate("/dashboard");
+      navigate("/home");
     } catch (error) {
       const errorMessage = (error as Error).message;
       toast({
