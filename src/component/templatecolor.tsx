@@ -1,5 +1,5 @@
 const ColorBtn = {
-  AddBtnBg: "#2F2F2F",
+  AddBtnBg: "#424242",
   AddBtnText: "#FFFFFF",
   DelBtnBg: "#D2D2D2",
   DelBtnText: "#7F7F7F",
@@ -24,7 +24,20 @@ const ColorSideBar ={
   BtnSideBar: "#262626",
   BtnSideBarHover: "#262626",
   rSidebar: '#ffffff',
-  BtnSideBarActive: "#262626"
+  BtnSideBarActive: "#262626",
+  Breadcrumb: "#ffffff",
 }
 
-export { ColorBtn, ColorText, FieldColor,ColorSideBar };
+const ColorTable = {
+  TableHead: "#DFDFDF",
+  TableHeadText: "#3A3838",
+  TableBody: "#FFFFFF",
+  TableText: "#080808",
+  TableBorder: "#E2E8F0",
+  TableHover: "#999999",
+  TableTextSize: "18px",
+  TableTextWeight: 700,
+};
+
+
+export { ColorBtn, ColorText, FieldColor,ColorSideBar , ColorTable };

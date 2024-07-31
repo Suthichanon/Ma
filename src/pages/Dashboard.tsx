@@ -14,8 +14,8 @@ import {
 
 export default function CallToActionWithAnnotation() {
   return (
-    <>
-      <Container maxW={"3xl"}>
+    <Box w={'100%'} px={{base:0,lg:8}} overflow={'hidden'}>
+      <Box minH={'100%'}>
         <Stack
           as={Box}
           textAlign={"center"}
@@ -80,8 +80,8 @@ export default function CallToActionWithAnnotation() {
             </Box>
           </Stack>
         </Stack>
-      </Container>
-    </>
+      </Box>
+    </Box>
   );
 }
 

@@ -12,7 +12,7 @@ const PrivateRoute: React.FC = () => {
   }
 
   if (!user) {
-    return <Navigate to="/signin" />;
+    return <Navigate to="/" />;
   }
 
   return <Outlet />;

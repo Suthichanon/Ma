@@ -10,7 +10,10 @@ import PrivateRoute from "./component/Auth/PrivateRoute";
 import Layout from "./component/Sidebar/Layout";
 import Customer from "./pages/Customer";
 import CustomerProtal from "./pages/CustomerProtal";
-
+import AddProjects from "./pages/AddProjects";
+import MaPage from "./pages/MaPage";
+import SupportTicket from "./pages/AddSupTick";
+import UserManageAcc from "./pages/ManagerAccount";
 const theme = extendTheme({
   fonts: {
     heading: `'Inter', sans-serif`,
@@ -40,9 +43,12 @@ const App: React.FC = () => {
                 path="/customers/customerprotal"
                 element={<CustomerProtal />}
               ></Route>
+              <Route path="/projects/project" element={<AddProjects />}></Route>
+              <Route path="/projects/projectma" element={<MaPage />}></Route>
+              <Route path="/support/ticket" element={<SupportTicket/>} />
+              <Route path="/user/manageacc" element={<UserManageAcc/>}></Route>
             </Route>
           </Route>
-
           <Route path="*" element={<div>Page Not Found</div>} />
         </Routes>
       </BrowserRouter>
