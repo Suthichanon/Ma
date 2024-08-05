@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Modal,
   ModalOverlay,
@@ -8,7 +8,6 @@ import {
   ModalBody,
   ModalCloseButton,
   Button,
-  useDisclosure,
   FormControl,
   FormLabel,
   Input,
@@ -19,34 +18,58 @@ import {
   RadioGroup,
   FormErrorMessage,
 } from "@chakra-ui/react";
-import { FaPlusSquare } from "react-icons/fa";
-import { ColorBtn } from "../templatecolor";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  fetchSignInMethodsForEmail,
+} from "firebase/auth";
 import { db } from "../../firebase/firebaseAuth";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, doc, updateDoc } from "firebase/firestore";
+import { ColorBtn } from "../templatecolor";
 
 interface CustomerModalProps {
   addCustomer: (newCustomer: Customer) => void;
+  updateCustomer: (updatedCustomer: Customer) => void;
+  customer?: Customer | null;
+  isOpen: boolean;
+  onClose: () => void;
 }
 
 interface Customer {
+  id?: string;
+  username: string;
+  email: string;
+  password: string;
   customerName: string;
   taxIdOrIdCard: string;
+  idCard: string;
+  address: string;
+  zipCode: string;
+  phone: string;
+  fax: string;
+  website: string;
   contactName: string;
   mobile: string;
-  email: string;
+  contactEmail: string;
+  customerType: string;
+  branchType: string;
 }
 
-const CustomerModal: React.FC<CustomerModalProps> = ({ addCustomer }) => {
-  const { isOpen, onOpen, onClose } = useDisclosure();
+const CustomerModal: React.FC<CustomerModalProps> = ({
+  addCustomer,
+  updateCustomer,
+  customer,
+  isOpen,
+  onClose,
+}) => {
   const [customerType, setCustomerType] = useState("corporation");
   const [branchType, setBranchType] = useState("");
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<Customer>({
     username: "",
     email: "",
     password: "",
     customerName: "",
-    taxId: "",
+    taxIdOrIdCard: "",
     idCard: "",
     address: "",
     zipCode: "",
@@ -56,6 +79,8 @@ const CustomerModal: React.FC<CustomerModalProps> = ({ addCustomer }) => {
     contactName: "",
     mobile: "",
     contactEmail: "",
+    customerType: "corporation",
+    branchType: "",
   });
 
   const [errors, setErrors] = useState({
@@ -63,7 +88,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({ addCustomer }) => {
     email: "",
     password: "",
     customerName: "",
-    taxId: "",
+    taxIdOrIdCard: "",
     idCard: "",
     address: "",
     zipCode: "",
@@ -75,6 +100,39 @@ const CustomerModal: React.FC<CustomerModalProps> = ({ addCustomer }) => {
     contactEmail: "",
     branchType: "",
   });
+
+  useEffect(() => {
+    if (customer) {
+      setFormData(customer);
+      setCustomerType(customer.customerType);
+      setBranchType(customer.branchType);
+    } else {
+      resetForm();
+    }
+  }, [customer, isOpen]);
+
+  const resetForm = () => {
+    setFormData({
+      username: "",
+      email: "",
+      password: "",
+      customerName: "",
+      taxIdOrIdCard: "",
+      idCard: "",
+      address: "",
+      zipCode: "",
+      phone: "",
+      fax: "",
+      website: "",
+      contactName: "",
+      mobile: "",
+      contactEmail: "",
+      customerType: "corporation",
+      branchType: "",
+    });
+    setCustomerType("corporation");
+    setBranchType("");
+  };
 
   const handleCustomerTypeChange = (value: string) => {
     setCustomerType(value);
@@ -118,7 +176,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({ addCustomer }) => {
       email: "",
       password: "",
       customerName: "",
-      taxId: "",
+      taxIdOrIdCard: "",
       idCard: "",
       address: "",
       zipCode: "",
@@ -154,10 +212,11 @@ const CustomerModal: React.FC<CustomerModalProps> = ({ addCustomer }) => {
     }
 
     if (customerType === "corporation") {
-      if (!formData.taxId) {
-        newErrors.taxId = "Please enter a tax ID.";
-      } else if (!validateTaxId(formData.taxId)) {
-        newErrors.taxId = "Tax ID must be either 10 or 13 characters long.";
+      if (!formData.taxIdOrIdCard) {
+        newErrors.taxIdOrIdCard = "Please enter a tax ID.";
+      } else if (!validateTaxId(formData.taxIdOrIdCard)) {
+        newErrors.taxIdOrIdCard =
+          "Tax ID must be either 10 or 13 characters long.";
       }
 
       if (!branchType) {
@@ -194,398 +253,422 @@ const CustomerModal: React.FC<CustomerModalProps> = ({ addCustomer }) => {
     const isValid = Object.values(newErrors).every((error) => !error);
 
     if (isValid) {
+      const auth = getAuth();
       try {
-        const auth = getAuth();
-        await createUserWithEmailAndPassword(
+        const signInMethods = await fetchSignInMethodsForEmail(
           auth,
-          formData.email,
-          formData.password
+          formData.email
         );
+        if (signInMethods.length === 0 && !customer) {
+          // User does not exist and it's a new customer, create a new user
+          await createUserWithEmailAndPassword(
+            auth,
+            formData.email,
+            formData.password
+          );
+        }
 
         const newCustomer: Customer = {
-          customerName: formData.customerName,
-          taxIdOrIdCard:
-            customerType === "corporation" ? formData.taxId : formData.idCard,
-          contactName: formData.contactName,
-          mobile: formData.mobile,
-          email: formData.contactEmail,
+          ...formData,
+          customerType,
+          branchType,
         };
 
-        await addDoc(collection(db, "customers"), newCustomer);
-        addCustomer(newCustomer);
+        const customerData = {
+          ...newCustomer,
+        };
+
+        if (customer && customer.id) {
+          // Update existing customer
+          await updateDoc(doc(db, "customers", customer.id), customerData);
+          updateCustomer(newCustomer);
+        } else {
+          // Add new customer
+          const docRef = await addDoc(
+            collection(db, "customers"),
+            customerData
+          );
+          newCustomer.id = docRef.id;
+          addCustomer(newCustomer);
+        }
+
         onClose();
+        resetForm(); // รีเซ็ทฟอร์มหลังจากบันทึกข้อมูลเสร็จ
       } catch (error) {
-        console.error("Error creating user:", error);
+        console.error("Error creating or checking user:", error);
         setErrors((prevErrors) => ({
           ...prevErrors,
-          email: "Error creating user. Please try again.",
+          email: "Error creating or checking user. Please try again.",
         }));
       }
     }
   };
 
   return (
-    <Box>
-      <Button
-        onClick={onOpen}
-        leftIcon={<FaPlusSquare />}
-        colorScheme="red"
-        variant="solid"
-        size="lg"
-        bg={ColorBtn.AddBtnBg}
-      >
-        Add Customer
-      </Button>
-      <Modal isOpen={isOpen} onClose={onClose} size="4xl">
-        <ModalOverlay />
-        <ModalContent>
-          <ModalHeader textAlign="center" color={ColorBtn.UpBtnBg}>
-            ADD CUSTOMER
-          </ModalHeader>
-          <ModalCloseButton />
-          <ModalBody>
-            <Box display="flex" justifyContent="center" mb={4}>
-              <Box
-                display="flex"
-                bg="#d9d9d9"
+    <Modal isOpen={isOpen} onClose={onClose} size="4xl">
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader textAlign="center" color={ColorBtn.UpBtnBg}>
+          {customer ? "Edit Customer" : "Add Customer"}
+        </ModalHeader>
+        <ModalCloseButton />
+        <ModalBody>
+          <Box display="flex" justifyContent="center" mb={4}>
+            <Box
+              display="flex"
+              bg="#d9d9d9"
+              borderRadius="md"
+              p={1}
+              w="350px"
+              position="relative"
+            >
+              <Button
+                flex="1"
+                bg={customerType === "corporation" ? "white" : "transparent"}
+                onClick={() => handleCustomerTypeChange("corporation")}
                 borderRadius="md"
-                p={1}
-                w="350px"
+                zIndex={1}
                 position="relative"
               >
-                <Button
-                  flex="1"
-                  bg={customerType === "corporation" ? "white" : "transparent"}
-                  onClick={() => handleCustomerTypeChange("corporation")}
-                  borderRadius="md"
-                  zIndex={1}
-                  position="relative"
-                >
-                  Corporation
-                </Button>
-                <Button
-                  flex="1"
-                  bg={customerType === "individual" ? "white" : "transparent"}
-                  onClick={() => handleCustomerTypeChange("individual")}
-                  borderRadius="md"
-                  zIndex={1}
-                  position="relative"
-                >
-                  Individual
-                </Button>
-                <Box
-                  position="absolute"
-                  top="1"
-                  bottom="1"
-                  left={customerType === "corporation" ? "0" : "49%"}
-                  width="50%"
-                  bg="#ffffff"
-                  borderRadius="md"
-                  transition="left 0.5s ease"
-                  zIndex={0}
-                />
-              </Box>
-            </Box>
-
-            {customerType === "corporation" ? (
-              <>
-                <SectionHeader title="CUSTOMER ACCOUNT" />
-                <FormControl isRequired isInvalid={!!errors.username}>
-                  <FormLabel>Username</FormLabel>
-                  <Input
-                    name="username"
-                    placeholder="Username"
-                    onChange={handleInputChange}
-                  />
-                  {errors.username && (
-                    <FormErrorMessage>{errors.username}</FormErrorMessage>
-                  )}
-                </FormControl>
-                <FormControl isRequired mt={4} isInvalid={!!errors.email}>
-                  <FormLabel>Email</FormLabel>
-                  <Input
-                    name="email"
-                    placeholder="Email"
-                    onChange={handleInputChange}
-                  />
-                  {errors.email && (
-                    <FormErrorMessage>{errors.email}</FormErrorMessage>
-                  )}
-                </FormControl>
-                <FormControl isRequired mt={4} isInvalid={!!errors.password}>
-                  <FormLabel>Password</FormLabel>
-                  <Input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    onChange={handleInputChange}
-                  />
-                  {errors.password && (
-                    <FormErrorMessage>{errors.password}</FormErrorMessage>
-                  )}
-                </FormControl>
-
-                <SectionHeader title="CUSTOMER INFORMATION" />
-                <FormControl isRequired isInvalid={!!errors.customerName}>
-                  <FormLabel>Customer Name</FormLabel>
-                  <Input
-                    name="customerName"
-                    placeholder="Customer Name"
-                    onChange={handleInputChange}
-                  />
-                  {errors.customerName && (
-                    <FormErrorMessage>{errors.customerName}</FormErrorMessage>
-                  )}
-                </FormControl>
-                <FormControl isRequired mt={4} isInvalid={!!errors.taxId}>
-                  <FormLabel>Tax ID</FormLabel>
-                  <Input
-                    name="taxId"
-                    placeholder="Tax ID"
-                    onChange={handleInputChange}
-                  />
-                  {errors.taxId && (
-                    <FormErrorMessage>{errors.taxId}</FormErrorMessage>
-                  )}
-                </FormControl>
-                <FormControl isRequired mt={4} isInvalid={!!errors.branchType}>
-                  <FormLabel>Branch</FormLabel>
-                  <RadioGroup onChange={setBranchType} value={branchType}>
-                    <HStack>
-                      <Radio value="head-office" colorScheme="gray">
-                        Head Office
-                      </Radio>
-                      <Radio value="branch" colorScheme="gray">
-                        Branch
-                      </Radio>
-                    </HStack>
-                  </RadioGroup>
-                  {errors.branchType && (
-                    <FormErrorMessage>{errors.branchType}</FormErrorMessage>
-                  )}
-                </FormControl>
-                <FormControl isRequired mt={4} isInvalid={!!errors.address}>
-                  <FormLabel>Address</FormLabel>
-                  <Textarea
-                    name="address"
-                    placeholder="Address"
-                    onChange={handleInputChange}
-                  />
-                  {errors.address && (
-                    <FormErrorMessage>{errors.address}</FormErrorMessage>
-                  )}
-                </FormControl>
-                <FormControl mt={4}>
-                  <FormLabel>Zip Code</FormLabel>
-                  <Input
-                    name="zipCode"
-                    placeholder="Zip Code"
-                    onChange={handleInputChange}
-                  />
-                </FormControl>
-                <FormControl mt={4}>
-                  <FormLabel>Phone</FormLabel>
-                  <Input
-                    name="phone"
-                    placeholder="Phone"
-                    onChange={handleInputChange}
-                  />
-                </FormControl>
-                <FormControl mt={4}>
-                  <FormLabel>Fax</FormLabel>
-                  <Input
-                    name="fax"
-                    placeholder="Fax"
-                    onChange={handleInputChange}
-                  />
-                </FormControl>
-                <FormControl mt={4}>
-                  <FormLabel>Website</FormLabel>
-                  <Input
-                    name="website"
-                    placeholder="Website"
-                    onChange={handleInputChange}
-                  />
-                </FormControl>
-
-                <SectionHeader title="CONTACT PERSON" />
-                <FormControl isRequired isInvalid={!!errors.contactName}>
-                  <FormLabel>Contact Name</FormLabel>
-                  <Input
-                    name="contactName"
-                    placeholder="Contact Name"
-                    onChange={handleInputChange}
-                  />
-                  {errors.contactName && (
-                    <FormErrorMessage>{errors.contactName}</FormErrorMessage>
-                  )}
-                </FormControl>
-                <FormControl isRequired mt={4} isInvalid={!!errors.mobile}>
-                  <FormLabel>Mobile</FormLabel>
-                  <Input
-                    name="mobile"
-                    placeholder="Mobile"
-                    onChange={handleInputChange}
-                  />
-                  {errors.mobile && (
-                    <FormErrorMessage>{errors.mobile}</FormErrorMessage>
-                  )}
-                </FormControl>
-                <FormControl
-                  isRequired
-                  mt={4}
-                  isInvalid={!!errors.contactEmail}
-                >
-                  <FormLabel>Email</FormLabel>
-                  <Input
-                    name="contactEmail"
-                    placeholder="Email"
-                    onChange={handleInputChange}
-                  />
-                  {errors.contactEmail && (
-                    <FormErrorMessage>{errors.contactEmail}</FormErrorMessage>
-                  )}
-                </FormControl>
-              </>
-            ) : (
-              <>
-                <SectionHeader title="CUSTOMER ACCOUNT" />
-                <FormControl isRequired isInvalid={!!errors.username}>
-                  <FormLabel>Username</FormLabel>
-                  <Input
-                    name="username"
-                    placeholder="Username"
-                    onChange={handleInputChange}
-                  />
-                  {errors.username && (
-                    <FormErrorMessage>{errors.username}</FormErrorMessage>
-                  )}
-                </FormControl>
-                <FormControl isRequired mt={4} isInvalid={!!errors.email}>
-                  <FormLabel>Email</FormLabel>
-                  <Input
-                    name="email"
-                    placeholder="Email"
-                    onChange={handleInputChange}
-                  />
-                  {errors.email && (
-                    <FormErrorMessage>{errors.email}</FormErrorMessage>
-                  )}
-                </FormControl>
-                <FormControl isRequired mt={4} isInvalid={!!errors.password}>
-                  <FormLabel>Password</FormLabel>
-                  <Input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    onChange={handleInputChange}
-                  />
-                  {errors.password && (
-                    <FormErrorMessage>{errors.password}</FormErrorMessage>
-                  )}
-                </FormControl>
-
-                <SectionHeader title="CUSTOMER INFORMATION" />
-                <FormControl isRequired isInvalid={!!errors.customerName}>
-                  <FormLabel>Customer Name</FormLabel>
-                  <Input
-                    name="customerName"
-                    placeholder="Customer Name"
-                    onChange={handleInputChange}
-                  />
-                  {errors.customerName && (
-                    <FormErrorMessage>{errors.customerName}</FormErrorMessage>
-                  )}
-                </FormControl>
-                <FormControl isRequired mt={4} isInvalid={!!errors.idCard}>
-                  <FormLabel>ID Card</FormLabel>
-                  <Input
-                    name="idCard"
-                    placeholder="ID Card"
-                    onChange={handleInputChange}
-                  />
-                  {errors.idCard && (
-                    <FormErrorMessage>{errors.idCard}</FormErrorMessage>
-                  )}
-                </FormControl>
-                <FormControl isRequired mt={4} isInvalid={!!errors.address}>
-                  <FormLabel>Address</FormLabel>
-                  <Textarea
-                    name="address"
-                    placeholder="Address"
-                    onChange={handleInputChange}
-                  />
-                  {errors.address && (
-                    <FormErrorMessage>{errors.address}</FormErrorMessage>
-                  )}
-                </FormControl>
-                <FormControl mt={4}>
-                  <FormLabel>Zip Code</FormLabel>
-                  <Input
-                    name="zipCode"
-                    placeholder="Zip Code"
-                    onChange={handleInputChange}
-                  />
-                </FormControl>
-
-                <SectionHeader title="CONTACT PERSON" />
-                <FormControl isRequired isInvalid={!!errors.contactName}>
-                  <FormLabel>Contact Name</FormLabel>
-                  <Input
-                    name="contactName"
-                    placeholder="Contact Name"
-                    onChange={handleInputChange}
-                  />
-                  {errors.contactName && (
-                    <FormErrorMessage>{errors.contactName}</FormErrorMessage>
-                  )}
-                </FormControl>
-                <FormControl isRequired mt={4} isInvalid={!!errors.mobile}>
-                  <FormLabel>Mobile</FormLabel>
-                  <Input
-                    name="mobile"
-                    placeholder="Mobile"
-                    onChange={handleInputChange}
-                  />
-                  {errors.mobile && (
-                    <FormErrorMessage>{errors.mobile}</FormErrorMessage>
-                  )}
-                </FormControl>
-                <FormControl
-                  isRequired
-                  mt={4}
-                  isInvalid={!!errors.contactEmail}
-                >
-                  <FormLabel>Email</FormLabel>
-                  <Input
-                    name="contactEmail"
-                    placeholder="Email"
-                    onChange={handleInputChange}
-                  />
-                  {errors.contactEmail && (
-                    <FormErrorMessage>{errors.contactEmail}</FormErrorMessage>
-                  )}
-                </FormControl>
-              </>
-            )}
-          </ModalBody>
-          <ModalFooter>
-            <Box w={"100%"} display={"flex"} justifyContent={"center"}>
-              <Button variant="ghost" mr={3} onClick={onClose}>
-                Cancel
+                Corporation
               </Button>
               <Button
-                colorScheme="red"
-                bg={ColorBtn.AddBtnBg}
-                onClick={handleSave}
+                flex="1"
+                bg={customerType === "individual" ? "white" : "transparent"}
+                onClick={() => handleCustomerTypeChange("individual")}
+                borderRadius="md"
+                zIndex={1}
+                position="relative"
               >
-                Save
+                Individual
               </Button>
+              <Box
+                position="absolute"
+                top="1"
+                bottom="1"
+                left={customerType === "corporation" ? "0" : "49%"}
+                width="50%"
+                bg="#ffffff"
+                borderRadius="md"
+                transition="left 0.5s ease"
+                zIndex={0}
+              />
             </Box>
-          </ModalFooter>
-        </ModalContent>
-      </Modal>
-    </Box>
+          </Box>
+
+          {customerType === "corporation" ? (
+            <>
+              <SectionHeader title="CUSTOMER ACCOUNT" />
+              <FormControl isRequired isInvalid={!!errors.username}>
+                <FormLabel>Username</FormLabel>
+                <Input
+                  name="username"
+                  placeholder="Username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                />
+                {errors.username && (
+                  <FormErrorMessage>{errors.username}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl isRequired mt={4} isInvalid={!!errors.email}>
+                <FormLabel>Email</FormLabel>
+                <Input
+                  name="email"
+                  placeholder="Email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                />
+                {errors.email && (
+                  <FormErrorMessage>{errors.email}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl isRequired mt={4} isInvalid={!!errors.password}>
+                <FormLabel>Password</FormLabel>
+                <Input
+                  type="password"
+                  name="password"
+                  placeholder="Password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                />
+                {errors.password && (
+                  <FormErrorMessage>{errors.password}</FormErrorMessage>
+                )}
+              </FormControl>
+
+              <SectionHeader title="CUSTOMER INFORMATION" />
+              <FormControl isRequired isInvalid={!!errors.customerName}>
+                <FormLabel>Customer Name</FormLabel>
+                <Input
+                  name="customerName"
+                  placeholder="Customer Name"
+                  value={formData.customerName}
+                  onChange={handleInputChange}
+                />
+                {errors.customerName && (
+                  <FormErrorMessage>{errors.customerName}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl isRequired mt={4} isInvalid={!!errors.taxIdOrIdCard}>
+                <FormLabel>Tax ID</FormLabel>
+                <Input
+                  name="taxIdOrIdCard"
+                  placeholder="Tax ID"
+                  value={formData.taxIdOrIdCard}
+                  onChange={handleInputChange}
+                />
+                {errors.taxIdOrIdCard && (
+                  <FormErrorMessage>{errors.taxIdOrIdCard}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl isRequired mt={4} isInvalid={!!errors.branchType}>
+                <FormLabel>Branch</FormLabel>
+                <RadioGroup onChange={setBranchType} value={branchType}>
+                  <HStack>
+                    <Radio value="head-office" colorScheme="gray">
+                      Head Office
+                    </Radio>
+                    <Radio value="branch" colorScheme="gray">
+                      Branch
+                    </Radio>
+                  </HStack>
+                </RadioGroup>
+                {errors.branchType && (
+                  <FormErrorMessage>{errors.branchType}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl isRequired mt={4} isInvalid={!!errors.address}>
+                <FormLabel>Address</FormLabel>
+                <Textarea
+                  name="address"
+                  placeholder="Address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                />
+                {errors.address && (
+                  <FormErrorMessage>{errors.address}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl mt={4}>
+                <FormLabel>Zip Code</FormLabel>
+                <Input
+                  name="zipCode"
+                  placeholder="Zip Code"
+                  value={formData.zipCode}
+                  onChange={handleInputChange}
+                />
+              </FormControl>
+              <FormControl mt={4}>
+                <FormLabel>Phone</FormLabel>
+                <Input
+                  name="phone"
+                  placeholder="Phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                />
+              </FormControl>
+              <FormControl mt={4}>
+                <FormLabel>Fax</FormLabel>
+                <Input
+                  name="fax"
+                  placeholder="Fax"
+                  value={formData.fax}
+                  onChange={handleInputChange}
+                />
+              </FormControl>
+              <FormControl mt={4}>
+                <FormLabel>Website</FormLabel>
+                <Input
+                  name="website"
+                  placeholder="Website"
+                  value={formData.website}
+                  onChange={handleInputChange}
+                />
+              </FormControl>
+
+              <SectionHeader title="CONTACT PERSON" />
+              <FormControl isRequired isInvalid={!!errors.contactName}>
+                <FormLabel>Contact Name</FormLabel>
+                <Input
+                  name="contactName"
+                  placeholder="Contact Name"
+                  value={formData.contactName}
+                  onChange={handleInputChange}
+                />
+                {errors.contactName && (
+                  <FormErrorMessage>{errors.contactName}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl isRequired mt={4} isInvalid={!!errors.mobile}>
+                <FormLabel>Mobile</FormLabel>
+                <Input
+                  name="mobile"
+                  placeholder="Mobile"
+                  value={formData.mobile}
+                  onChange={handleInputChange}
+                />
+                {errors.mobile && (
+                  <FormErrorMessage>{errors.mobile}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl isRequired mt={4} isInvalid={!!errors.contactEmail}>
+                <FormLabel>Email</FormLabel>
+                <Input
+                  name="contactEmail"
+                  placeholder="Email"
+                  value={formData.contactEmail}
+                  onChange={handleInputChange}
+                />
+                {errors.contactEmail && (
+                  <FormErrorMessage>{errors.contactEmail}</FormErrorMessage>
+                )}
+              </FormControl>
+            </>
+          ) : (
+            <>
+              <SectionHeader title="CUSTOMER ACCOUNT" />
+              <FormControl isRequired isInvalid={!!errors.username}>
+                <FormLabel>Username</FormLabel>
+                <Input
+                  name="username"
+                  placeholder="Username"
+                  value={formData.username}
+                  onChange={handleInputChange}
+                />
+                {errors.username && (
+                  <FormErrorMessage>{errors.username}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl isRequired mt={4} isInvalid={!!errors.email}>
+                <FormLabel>Email</FormLabel>
+                <Input
+                  name="email"
+                  placeholder="Email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                />
+                {errors.email && (
+                  <FormErrorMessage>{errors.email}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl isRequired mt={4} isInvalid={!!errors.password}>
+                <FormLabel>Password</FormLabel>
+                <Input
+                  type="password"
+                  name="password"
+                  placeholder="Password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                />
+                {errors.password && (
+                  <FormErrorMessage>{errors.password}</FormErrorMessage>
+                )}
+              </FormControl>
+
+              <SectionHeader title="CUSTOMER INFORMATION" />
+              <FormControl isRequired isInvalid={!!errors.customerName}>
+                <FormLabel>Customer Name</FormLabel>
+                <Input
+                  name="customerName"
+                  placeholder="Customer Name"
+                  value={formData.customerName}
+                  onChange={handleInputChange}
+                />
+                {errors.customerName && (
+                  <FormErrorMessage>{errors.customerName}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl isRequired mt={4} isInvalid={!!errors.idCard}>
+                <FormLabel>ID Card</FormLabel>
+                <Input
+                  name="idCard"
+                  placeholder="ID Card"
+                  value={formData.idCard}
+                  onChange={handleInputChange}
+                />
+                {errors.idCard && (
+                  <FormErrorMessage>{errors.idCard}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl isRequired mt={4} isInvalid={!!errors.address}>
+                <FormLabel>Address</FormLabel>
+                <Textarea
+                  name="address"
+                  placeholder="Address"
+                  value={formData.address}
+                  onChange={handleInputChange}
+                />
+                {errors.address && (
+                  <FormErrorMessage>{errors.address}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl mt={4}>
+                <FormLabel>Zip Code</FormLabel>
+                <Input
+                  name="zipCode"
+                  placeholder="Zip Code"
+                  value={formData.zipCode}
+                  onChange={handleInputChange}
+                />
+              </FormControl>
+
+              <SectionHeader title="CONTACT PERSON" />
+              <FormControl isRequired isInvalid={!!errors.contactName}>
+                <FormLabel>Contact Name</FormLabel>
+                <Input
+                  name="contactName"
+                  placeholder="Contact Name"
+                  value={formData.contactName}
+                  onChange={handleInputChange}
+                />
+                {errors.contactName && (
+                  <FormErrorMessage>{errors.contactName}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl isRequired mt={4} isInvalid={!!errors.mobile}>
+                <FormLabel>Mobile</FormLabel>
+                <Input
+                  name="mobile"
+                  placeholder="Mobile"
+                  value={formData.mobile}
+                  onChange={handleInputChange}
+                />
+                {errors.mobile && (
+                  <FormErrorMessage>{errors.mobile}</FormErrorMessage>
+                )}
+              </FormControl>
+              <FormControl isRequired mt={4} isInvalid={!!errors.contactEmail}>
+                <FormLabel>Email</FormLabel>
+                <Input
+                  name="contactEmail"
+                  placeholder="Email"
+                  value={formData.contactEmail}
+                  onChange={handleInputChange}
+                />
+                {errors.contactEmail && (
+                  <FormErrorMessage>{errors.contactEmail}</FormErrorMessage>
+                )}
+              </FormControl>
+            </>
+          )}
+        </ModalBody>
+        <ModalFooter>
+          <Box w={"100%"} display={"flex"} justifyContent={"center"}>
+            <Button variant="ghost" mr={3} onClick={onClose}>
+              Cancel
+            </Button>
+            <Button
+              colorScheme="green"
+              bg={ColorBtn.AddBtnBg}
+              onClick={handleSave}
+            >
+              Save
+            </Button>
+          </Box>
+        </ModalFooter>
+      </ModalContent>
+    </Modal>
   );
 };
 
