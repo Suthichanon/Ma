@@ -24,7 +24,16 @@ import {
   fetchSignInMethodsForEmail,
 } from "firebase/auth";
 import { db } from "../../firebase/firebaseAuth";
-import { collection, addDoc, doc, updateDoc } from "firebase/firestore";
+import {
+  collection,
+  addDoc,
+  doc,
+  updateDoc,
+  query,
+  orderBy,
+  limit,
+  getDocs,
+} from "firebase/firestore";
 import { ColorBtn } from "../templatecolor";
 
 interface CustomerModalProps {
@@ -37,6 +46,7 @@ interface CustomerModalProps {
 
 interface Customer {
   id?: string;
+  customerId?: string;
   username: string;
   email: string;
   password: string;
@@ -170,6 +180,32 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
     return idCard.length === 13;
   };
 
+  const getLastCustomerId = async (): Promise<string | null> => {
+    const customersCollection = collection(db, "customers");
+    const customersQuery = query(
+      customersCollection,
+      orderBy("customerId", "desc"),
+      limit(1)
+    );
+    const querySnapshot = await getDocs(customersQuery);
+
+    if (!querySnapshot.empty) {
+      const lastCustomer = querySnapshot.docs[0].data() as Customer;
+      return lastCustomer.customerId || null;
+    }
+    return null;
+  };
+
+  const generateNewCustomerId = (lastCustomerId: string | null): string => {
+    if (!lastCustomerId) {
+      return "CU000001";
+    }
+
+    const numericPart = parseInt(lastCustomerId.replace("CU", ""), 10);
+    const newNumericPart = numericPart + 1;
+    return `CU${newNumericPart.toString().padStart(6, "0")}`;
+  };
+
   const handleSave = async () => {
     const newErrors = {
       username: "",
@@ -274,12 +310,17 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
           branchType,
         };
 
+        if (!customer) {
+          const lastCustomerId = await getLastCustomerId();
+          newCustomer.customerId = generateNewCustomerId(lastCustomerId);
+        }
+
         const customerData = {
           ...newCustomer,
         };
 
         if (customer && customer.id) {
-          // Update existing customer
+          // Update existing customer, don't change customerId
           await updateDoc(doc(db, "customers", customer.id), customerData);
           updateCustomer(newCustomer);
         } else {

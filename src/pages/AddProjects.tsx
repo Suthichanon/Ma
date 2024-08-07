@@ -47,6 +47,7 @@ interface Project {
   projectId: string;
   projectName: string;
   customerName: string;
+  customerId: string; 
 }
 
 const Projects: React.FC = () => {

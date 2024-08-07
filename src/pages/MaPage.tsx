@@ -48,10 +48,13 @@ interface MaintenanceAgreement {
   maNumber: string;
   projectName: string;
   customerName: string;
+  projectId: string;
+  customerId: string;
   startDate: string;
   endDate: string;
   maturity: string;
   status: string;
+  remaining?: string; // Add this line
 }
 
 const MaintenanceAgreements: React.FC = () => {
@@ -73,9 +76,12 @@ const MaintenanceAgreements: React.FC = () => {
     const querySnapshot = await getDocs(
       query(collection(db, "maintenanceAgreements"), orderBy("maNumber"))
     );
-    const agreementList = querySnapshot.docs.map(
-      (doc) => ({ id: doc.id, ...doc.data() } as MaintenanceAgreement)
-    );
+    const agreementList = querySnapshot.docs.map((doc) => {
+      const data = doc.data() as MaintenanceAgreement;
+      const endDate = dayjs(data.endDate, "DD/MM/YYYY");
+      const remaining = endDate.diff(dayjs(), "day");
+      return { id: doc.id, ...data, remaining: `${remaining} DAYS` };
+    });
     setAgreements(agreementList);
   };
 
@@ -110,7 +116,17 @@ const MaintenanceAgreements: React.FC = () => {
   };
 
   const handleAddAgreement = () => {
-    setSelectedAgreement(null);
+    setSelectedAgreement({
+      maNumber: "",
+      projectName: "",
+      customerName: "",
+      projectId: "",
+      customerId: "",
+      startDate: "",
+      endDate: "",
+      maturity: "",
+      status: "",
+    });
     onOpen();
   };
 
@@ -179,14 +195,42 @@ const MaintenanceAgreements: React.FC = () => {
     return pageNumbers;
   };
 
-  const getStatusButton = (maturity: string) => {
+  const getStatusButton = (maturity: string): JSX.Element => {
     const days = parseInt(maturity.split(" ")[0], 10);
+
     if (days > 60) {
-      return <Button w={'100%'} color={'white'} colorScheme="green">Active</Button>;
+      return (
+        <Button
+          w={"100%"}
+          color={"white"}
+          backgroundColor="#01B574"
+          _hover={{ backgroundColor: "#01A367" }} // ปรับสีเมื่อ hover
+        >
+          Active
+        </Button>
+      );
     } else if (days > 0) {
-      return <Button w={'100%'} color={'white'} colorScheme="yellow">Duration</Button>;
+      return (
+        <Button
+          w={"100%"}
+          color={"white"}
+          backgroundColor="#FFB547"
+          _hover={{ backgroundColor: "#E5A23A" }} // ปรับสีเมื่อ hover
+        >
+          Duration
+        </Button>
+      );
     } else {
-      return <Button w={'100%'} color={'white'} colorScheme="red">Expire</Button>;
+      return (
+        <Button
+          w={"100%"}
+          color={"white"}
+          backgroundColor="#E31A1A"
+          _hover={{ backgroundColor: "#CC1717" }} // ปรับสีเมื่อ hover
+        >
+          Expire
+        </Button>
+      );
     }
   };
 
@@ -299,6 +343,14 @@ const MaintenanceAgreements: React.FC = () => {
                 textAlign="center"
                 fontWeight={ColorTable.TableTextWeight}
               >
+                REMAINING
+              </Th>
+              <Th
+                color={ColorTable.TableHeadText}
+                fontSize={ColorTable.TableTextSize}
+                textAlign="center"
+                fontWeight={ColorTable.TableTextWeight}
+              >
                 MANAGE
               </Th>
             </Tr>
@@ -317,6 +369,7 @@ const MaintenanceAgreements: React.FC = () => {
                 <Td textAlign="center">
                   {getStatusButton(agreement.maturity)}
                 </Td>
+                <Td textAlign="center">{agreement.remaining}</Td>
                 <Td textAlign="center">
                   <Menu>
                     <MenuButton

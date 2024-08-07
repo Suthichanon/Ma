@@ -35,12 +35,13 @@ import { ColorTable, ColorBtn } from "../component/templatecolor";
 import { FaEllipsisH, FaPlusSquare } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
 import CustomerModal from "../component/modal/addCustomer";
-import ViewCustomerModal from "../component/modal/ViewCustomerModal";
+import ViewCustomerModal from "../component/modal/viewCustomerModal";
 import { db } from "../firebase/firebaseAuth";
 import { collection, getDocs, doc, deleteDoc } from "firebase/firestore";
 
 interface Customer {
   id?: string;
+  customerId?: string;
   username: string;
   email: string;
   password: string;
@@ -71,7 +72,6 @@ const Customers: React.FC = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null
   );
-  const [selectedType, setSelectedType] = useState<string | null>("all"); // State สำหรับเก็บประเภทลูกค้า
   const {
     isOpen: isEditOpen,
     onOpen: onEditOpen,
@@ -95,6 +95,9 @@ const Customers: React.FC = () => {
       const customerList = querySnapshot.docs.map(
         (doc) => ({ id: doc.id, ...doc.data() } as Customer)
       );
+      customerList.sort((a, b) =>
+        (a.customerId ?? "").localeCompare(b.customerId ?? "")
+      );
       setCustomers(customerList);
     };
 
@@ -102,7 +105,13 @@ const Customers: React.FC = () => {
   }, []);
 
   const addCustomer = (newCustomer: Customer) => {
-    setCustomers([...customers, newCustomer]);
+    setCustomers((prevCustomers) => {
+      const updatedCustomers = [...prevCustomers, newCustomer];
+      updatedCustomers.sort((a, b) =>
+        (a.customerId ?? "").localeCompare(b.customerId ?? "")
+      );
+      return updatedCustomers;
+    });
     toast({
       title: "เพิ่มข้อมูลลูกค้าสำเร็จ",
       status: "success",
@@ -113,11 +122,15 @@ const Customers: React.FC = () => {
   };
 
   const updateCustomer = (updatedCustomer: Customer) => {
-    setCustomers(
-      customers.map((customer) =>
+    setCustomers((prevCustomers) => {
+      const updatedCustomers = prevCustomers.map((customer) =>
         customer.id === updatedCustomer.id ? updatedCustomer : customer
-      )
-    );
+      );
+      updatedCustomers.sort((a, b) =>
+        (a.customerId ?? "").localeCompare(b.customerId ?? "")
+      );
+      return updatedCustomers;
+    });
   };
 
   const handleEdit = (customer: Customer) => {
@@ -140,7 +153,15 @@ const Customers: React.FC = () => {
   const handleDelete = async (customerId: string) => {
     try {
       await deleteDoc(doc(db, "customers", customerId));
-      setCustomers(customers.filter((customer) => customer.id !== customerId));
+      setCustomers((prevCustomers) => {
+        const updatedCustomers = prevCustomers.filter(
+          (customer) => customer.id !== customerId
+        );
+        updatedCustomers.sort((a, b) =>
+          (a.customerId ?? "").localeCompare(b.customerId ?? "")
+        );
+        return updatedCustomers;
+      });
     } catch (error) {
       console.error("Error deleting customer:", error);
     }
@@ -164,14 +185,9 @@ const Customers: React.FC = () => {
     setCurrentPage(1); // รีเซ็ตหน้าเมื่อเปลี่ยนจำนวนแถวต่อหน้า
   };
 
-  const filteredCustomers =
-    selectedType === "all"
-      ? customers
-      : customers.filter((customer) => customer.customerType === selectedType);
-
-  const totalPages = Math.ceil(filteredCustomers.length / rowsPerPage);
+  const totalPages = Math.ceil(customers.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const selectedCustomers = filteredCustomers.slice(
+  const selectedCustomers = customers.slice(
     startIndex,
     startIndex + rowsPerPage
   );
@@ -222,15 +238,6 @@ const Customers: React.FC = () => {
             />
             <Input type="text" placeholder="Customer Name , Tax ID / ID Card" />
           </InputGroup>
-          <Select
-            width={200}
-            value={selectedType || 'all'}
-            onChange={(e) => setSelectedType(e.target.value)}
-          >
-            <option value="all">All</option>
-            <option value="corporation">Corporation</option>
-            <option value="individual">Individual</option>
-          </Select>
           <Button
             onClick={handleAddCustomer}
             leftIcon={<FaPlusSquare />}
@@ -264,6 +271,14 @@ const Customers: React.FC = () => {
         <Table>
           <Thead bg={ColorTable.TableHead}>
             <Tr>
+              <Th
+                color={ColorTable.TableHeadText}
+                fontSize={ColorTable.TableTextSize}
+                textAlign="center"
+                fontWeight={ColorTable.TableTextWeight}
+              >
+                Customer ID
+              </Th>
               <Th
                 color={ColorTable.TableHeadText}
                 fontSize={ColorTable.TableTextSize}
@@ -321,6 +336,7 @@ const Customers: React.FC = () => {
                 onClick={() => handleView(customer)}
                 style={{ cursor: "pointer" }}
               >
+                <Td textAlign="center">{customer.customerId}</Td>
                 <Td textAlign="center">{customer.customerName}</Td>
                 <Td textAlign="center">
                   {customer.customerType === "corporation"
