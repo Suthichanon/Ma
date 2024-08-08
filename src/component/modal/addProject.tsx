@@ -14,6 +14,7 @@ import {
   Box,
   Select,
   FormErrorMessage,
+  useToast,
 } from "@chakra-ui/react";
 import { db } from "../../firebase/firebaseAuth";
 import {
@@ -75,6 +76,8 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
     projectName: "",
     customerName: "",
   });
+  const [isSaving, setIsSaving] = useState(false); // สถานะการบันทึก
+  const toast = useToast();
 
   useEffect(() => {
     if (project) {
@@ -132,11 +135,12 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
 
     if (name === "customerName") {
       const selectedCustomer = customers.find(
-        (customer) => customer.customerName === value
+        (customer) => `${customer.customerId} - ${customer.customerName}` === value
       );
       setFormData((prevData) => ({
         ...prevData,
         customerId: selectedCustomer?.customerId || "",
+        customerName: selectedCustomer?.customerName || "",
       }));
     }
   };
@@ -185,11 +189,39 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
     return !newErrors.projectName && !newErrors.customerName;
   };
 
+  const checkDuplicateProjectName = async (): Promise<boolean> => {
+    const projectsQuery = query(
+      collection(db, "projects"),
+      orderBy("projectName")
+    );
+    const querySnapshot = await getDocs(projectsQuery);
+    const projectNames = querySnapshot.docs
+      .filter((doc) => doc.id !== project?.id) // กรองโปรเจคที่กำลังแก้ไขออก
+      .map((doc) => doc.data().projectName);
+    return projectNames.includes(formData.projectName);
+  };
+
   const handleSave = async () => {
     if (validateForm()) {
+      const isDuplicate = await checkDuplicateProjectName();
+      if (isDuplicate) {
+        toast({
+          title: "Error",
+          description: "Project Name already exists.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+      
+      setIsSaving(true); // ปิดการใช้งานปุ่ม Save
       try {
-        const lastProjectId = await getLastProjectId();
-        const newProjectId = generateNewProjectId(lastProjectId);
+        let newProjectId = formData.projectId;
+        if (!project) {
+          const lastProjectId = await getLastProjectId();
+          newProjectId = generateNewProjectId(lastProjectId);
+        }
         const newProject: FirestoreProjectData = {
           projectId: newProjectId,
           projectName: formData.projectName,
@@ -209,6 +241,8 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
         resetForm();
       } catch (error) {
         console.error("Error saving project:", error);
+      } finally {
+        setIsSaving(false); // เปิดการใช้งานปุ่ม Save อีกครั้ง
       }
     }
   };
@@ -236,28 +270,19 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
             <FormLabel>Customer Name</FormLabel>
             <Select
               name="customerName"
-              value={formData.customerName}
+              value={`${formData.customerId} - ${formData.customerName}`}
               onChange={handleInputChange}
               placeholder="Select Customer"
             >
               {customers.map((customer) => (
-                <option key={customer.id} value={customer.customerName}>
-                  {customer.customerName}
+                <option key={customer.id} value={`${customer.customerId} - ${customer.customerName}`}>
+                  {customer.customerId} - {customer.customerName}
                 </option>
               ))}
             </Select>
             {errors.customerName && (
               <FormErrorMessage>{errors.customerName}</FormErrorMessage>
             )}
-          </FormControl>
-          <FormControl mt={4} isRequired>
-            <FormLabel>Customer ID</FormLabel>
-            <Input
-              name="customerId"
-              value={formData.customerId}
-              readOnly
-              placeholder="Customer ID"
-            />
           </FormControl>
         </ModalBody>
         <ModalFooter>
@@ -269,6 +294,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
               colorScheme="red"
               bg={ColorBtn.AddBtnBg}
               onClick={handleSave}
+              isDisabled={isSaving} // ปิดการใช้งานปุ่ม Save เมื่อกำลังบันทึกข้อมูล
             >
               Save
             </Button>

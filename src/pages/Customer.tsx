@@ -113,7 +113,7 @@ const Customers: React.FC = () => {
       return updatedCustomers;
     });
     toast({
-      title: "เพิ่มข้อมูลลูกค้าสำเร็จ",
+      title: "add customer success",
       status: "success",
       duration: 3000,
       isClosable: true,
@@ -130,6 +130,12 @@ const Customers: React.FC = () => {
         (a.customerId ?? "").localeCompare(b.customerId ?? "")
       );
       return updatedCustomers;
+    });
+    toast({
+      title: "edit customer success",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
     });
   };
 
@@ -162,8 +168,20 @@ const Customers: React.FC = () => {
         );
         return updatedCustomers;
       });
+      toast({
+        title: "delete customer success",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
     } catch (error) {
       console.error("Error deleting customer:", error);
+      toast({
+        title: "error to deleting customer",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
     }
   };
 

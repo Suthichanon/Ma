@@ -15,6 +15,11 @@ import {
   Text,
   Box,
   useToast,
+  Alert,
+  AlertIcon,
+  AlertTitle,
+  AlertDescription,
+  CloseButton,
 } from "@chakra-ui/react";
 import { db } from "../../firebase/firebaseAuth";
 import {
@@ -26,6 +31,7 @@ import {
   query,
   orderBy,
   limit,
+  Timestamp,
 } from "firebase/firestore";
 import dayjs from "dayjs";
 import customParseFormat from "dayjs/plugin/customParseFormat";
@@ -48,8 +54,8 @@ interface MaintenanceAgreement {
   customerName: string;
   projectId: string;
   customerId: string;
-  startDate: string;
-  endDate: string;
+  startDate: Timestamp;
+  endDate: Timestamp;
   maturity: string;
   status: string;
 }
@@ -60,6 +66,12 @@ interface Project {
   projectName: string;
   customerName: string;
   customerId: string;
+}
+
+interface Customer {
+  id: string;
+  customerId: string;
+  customerName: string;
 }
 
 const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
@@ -76,12 +88,13 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
     customerName: "",
     projectId: "",
     customerId: "",
-    startDate: "",
-    endDate: "",
+    startDate: Timestamp.now(),
+    endDate: Timestamp.now(),
     maturity: "",
     status: "",
   });
   const [projects, setProjects] = useState<Project[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [usedProjects, setUsedProjects] = useState<string[]>([]);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -101,6 +114,18 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
       setProjects(projectList);
     };
 
+    const fetchCustomers = async () => {
+      const customersQuery = query(
+        collection(db, "customers"),
+        orderBy("customerId")
+      );
+      const querySnapshot = await getDocs(customersQuery);
+      const customerList = querySnapshot.docs.map(
+        (doc) => ({ id: doc.id, ...doc.data() } as Customer)
+      );
+      setCustomers(customerList);
+    };
+
     const fetchUsedProjects = async () => {
       const agreementsQuery = query(collection(db, "maintenanceAgreements"));
       const querySnapshot = await getDocs(agreementsQuery);
@@ -111,12 +136,17 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
     };
 
     fetchProjects();
+    fetchCustomers();
     fetchUsedProjects();
   }, [refreshData]);
 
   useEffect(() => {
     if (isOpen && agreement) {
-      setFormData(agreement);
+      setFormData({
+        ...agreement,
+        startDate: agreement.startDate,
+        endDate: agreement.endDate,
+      });
     } else if (isOpen && !agreement) {
       setFormData({
         maNumber: "",
@@ -124,8 +154,8 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
         customerName: "",
         projectId: "",
         customerId: "",
-        startDate: "",
-        endDate: "",
+        startDate: Timestamp.now(),
+        endDate: Timestamp.now(),
         maturity: "",
         status: "",
       });
@@ -134,19 +164,19 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
 
   useEffect(() => {
     if (formData.startDate) {
-      const newEndDate = dayjs(formData.startDate, "YYYY-MM-DD")
+      const newEndDate = dayjs(formData.startDate.toDate())
         .add(365, "day")
-        .format("DD/MM/YYYY");
+        .toDate();
       setFormData((prevData) => ({
         ...prevData,
-        endDate: newEndDate,
+        endDate: Timestamp.fromDate(newEndDate),
       }));
     }
   }, [formData.startDate]);
 
   useEffect(() => {
     if (formData.startDate && formData.endDate) {
-      const end = dayjs(formData.endDate, "DD/MM/YYYY");
+      const end = dayjs(formData.endDate.toDate());
       const today = dayjs();
       const daysDiff = end.diff(today, "day");
 
@@ -190,18 +220,17 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
     }));
 
     if (name === "startDate") {
-      const newEndDate = dayjs(value, "YYYY-MM-DD")
-        .add(365, "day")
-        .format("DD/MM/YYYY");
+      const newEndDate = dayjs(value).add(365, "day").toDate();
       setFormData((prevData) => ({
         ...prevData,
-        endDate: newEndDate,
+        startDate: Timestamp.fromDate(new Date(value)),
+        endDate: Timestamp.fromDate(newEndDate),
       }));
     }
 
     if (name === "customerName") {
-      const customer = projects.find(
-        (project) => project.customerName === value
+      const customer = customers.find(
+        (customer) => customer.customerName === value
       );
       if (customer) {
         setFormData((prevData) => ({
@@ -232,7 +261,8 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
     const querySnapshot = await getDocs(agreementsQuery);
 
     if (!querySnapshot.empty) {
-      const lastAgreement = querySnapshot.docs[0].data() as MaintenanceAgreement;
+      const lastAgreement =
+        querySnapshot.docs[0].data() as MaintenanceAgreement;
       return lastAgreement.maNumber;
     }
     return null;
@@ -272,24 +302,26 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
     ) {
       setIsSaving(true);
       try {
-        const lastMANumber = await getLastMANumber();
-        const newMANumber = generateNewMANumber(lastMANumber);
+        let newMANumber = formData.maNumber;
+        if (!agreement) {
+          const lastMANumber = await getLastMANumber();
+          newMANumber = generateNewMANumber(lastMANumber);
+        }
+
         const newAgreement: MaintenanceAgreement = {
           ...formData,
           maNumber: newMANumber,
         };
+
         if (agreement && agreement.id) {
           await updateDoc(doc(db, "maintenanceAgreements", agreement.id), {
             ...newAgreement,
           });
           updateAgreement({ ...newAgreement, id: agreement.id });
         } else {
-          const docRef = await addDoc(
-            collection(db, "maintenanceAgreements"),
-            {
-              ...newAgreement,
-            }
-          );
+          const docRef = await addDoc(collection(db, "maintenanceAgreements"), {
+            ...newAgreement,
+          });
           addAgreement({ ...newAgreement, id: docRef.id });
         }
         onClose();
@@ -299,8 +331,8 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
           customerName: "",
           projectId: "",
           customerId: "",
-          startDate: "",
-          endDate: "",
+          startDate: Timestamp.now(),
+          endDate: Timestamp.now(),
           maturity: "",
           status: "",
         });
@@ -322,16 +354,27 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
     }
   };
 
-  const availableCustomers = Array.from(
-    new Set(projects.map((project) => project.customerName))
+  const availableProjects = projects.filter(
+    (project) =>
+      (!usedProjects.includes(project.projectName) ||
+        project.projectName === formData.projectName) &&
+      project.customerId === formData.customerId
   );
 
-  const filteredProjects = projects.filter(
-    (project) =>
-      project.customerName === formData.customerName &&
-      (!usedProjects.includes(project.projectName) ||
-        agreement?.projectName === project.projectName)
+  const availableCustomers = Array.from(
+    new Set(
+      projects
+        .filter(
+          (project) =>
+            !usedProjects.includes(project.projectName) ||
+            project.customerId === formData.customerId
+        )
+        .map((project) => project.customerName)
+    )
   );
+
+  const hasAvailableCustomers = availableCustomers.length > 0;
+  const hasAvailableProjects = availableProjects.length > 0;
 
   return (
     <>
@@ -345,6 +388,14 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
           </ModalHeader>
           <ModalCloseButton />
           <ModalBody>
+            {!hasAvailableCustomers && (
+              <Alert status="warning">
+                <AlertIcon />
+                <AlertTitle mr={2}>No Customers Available!</AlertTitle>
+                <AlertDescription>Please add more projects.</AlertDescription>
+                <CloseButton position="absolute" right="8px" top="8px" />
+              </Alert>
+            )}
             <FormControl mt={4} isRequired>
               <FormLabel>Customer Name</FormLabel>
               <Select
@@ -352,13 +403,19 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
                 value={formData.customerName}
                 onChange={handleInputChange}
                 placeholder="Select Customer"
-                isDisabled={!!agreement} // Disable if editing
+                isDisabled={!!agreement || !hasAvailableCustomers} // Disable if editing or no available customers
               >
-                {availableCustomers.map((customerName, index) => (
-                  <option key={index} value={customerName}>
-                    {customerName}
-                  </option>
-                ))}
+                {availableCustomers.map((customerName, index) => {
+                  const customer = customers.find(
+                    (c) => c.customerName === customerName
+                  );
+                  return (
+                    <option key={index} value={customerName}>
+                      {customer?.customerId.replace(/[()]/g, "")} -{" "}
+                      {customerName}
+                    </option>
+                  );
+                })}
               </Select>
             </FormControl>
             <FormControl mt={4} isRequired>
@@ -368,21 +425,32 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
                 value={formData.projectName}
                 onChange={handleInputChange}
                 placeholder="Select Project"
-                isDisabled={!!agreement} // Disable if editing
+                isDisabled={!!agreement || !hasAvailableProjects} // Disable if editing or no available projects
               >
-                {filteredProjects.map((project) => (
+                {availableProjects.map((project) => (
                   <option key={project.id} value={project.projectName}>
+                    {project.projectId.replace(/[()]/g, "")} -{" "}
                     {project.projectName}
                   </option>
                 ))}
               </Select>
+              {!hasAvailableProjects && hasAvailableCustomers && (
+                <Alert status="warning" mt={4}>
+                  <AlertIcon />
+                  <AlertTitle mr={2}>No Projects Available!</AlertTitle>
+                  <AlertDescription>
+                    Please add more projects for the selected customer.
+                  </AlertDescription>
+                  <CloseButton position="absolute" right="8px" top="8px" />
+                </Alert>
+              )}
             </FormControl>
             <FormControl mt={4} isRequired>
               <FormLabel>Start Date</FormLabel>
               <Input
                 type="date"
                 name="startDate"
-                value={formData.startDate}
+                value={dayjs(formData.startDate.toDate()).format("YYYY-MM-DD")}
                 onChange={handleInputChange}
                 pattern="\d{2}/\d{2}/\d{4}"
               />
@@ -392,7 +460,7 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
               <Input
                 type="text"
                 name="endDate"
-                value={formData.endDate}
+                value={dayjs(formData.endDate.toDate()).format("YYYY-MM-DD")}
                 onChange={handleInputChange}
                 readOnly
               />
@@ -423,7 +491,11 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
         </ModalContent>
       </Modal>
 
-      <Modal isCentered isOpen={confirmOpen} onClose={() => setConfirmOpen(false)}>
+      <Modal
+        isCentered
+        isOpen={confirmOpen}
+        onClose={() => setConfirmOpen(false)}
+      >
         <ModalOverlay />
         <ModalContent>
           <ModalHeader>
@@ -435,9 +507,12 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
           <ModalBody>
             <Box textAlign="center">
               <Text>
-                START DAY: {dayjs(formData.startDate).format("DD/MM/YYYY")}
+                START DAY:{" "}
+                {dayjs(formData.startDate.toDate()).format("DD/MM/YYYY")}
               </Text>
-              <Text>END DAY: {formData.endDate}</Text>
+              <Text>
+                END DAY: {dayjs(formData.endDate.toDate()).format("DD/MM/YYYY")}
+              </Text>
               <Text>Duration: {formData.maturity}</Text>
               <Text>Status: {formData.status}</Text>
             </Box>

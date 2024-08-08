@@ -39,6 +39,7 @@ import {
   deleteDoc,
   query,
   orderBy,
+  Timestamp,
 } from "firebase/firestore";
 import { ColorTable, ColorBtn } from "../component/templatecolor";
 import dayjs from "dayjs";
@@ -50,11 +51,11 @@ interface MaintenanceAgreement {
   customerName: string;
   projectId: string;
   customerId: string;
-  startDate: string;
-  endDate: string;
+  startDate: Timestamp;
+  endDate: Timestamp;
   maturity: string;
   status: string;
-  remaining?: string; // Add this line
+  remaining?: string;
 }
 
 const MaintenanceAgreements: React.FC = () => {
@@ -78,9 +79,9 @@ const MaintenanceAgreements: React.FC = () => {
     );
     const agreementList = querySnapshot.docs.map((doc) => {
       const data = doc.data() as MaintenanceAgreement;
-      const endDate = dayjs(data.endDate, "DD/MM/YYYY");
-      const remaining = endDate.diff(dayjs(), "day");
-      return { id: doc.id, ...data, remaining: `${remaining} DAYS` };
+      const endDate = data.endDate.toDate();
+      const remaining = dayjs(endDate).diff(dayjs(), "day");
+      return { ...data, id: doc.id, remaining: `${remaining} DAYS` };
     });
     setAgreements(agreementList);
   };
@@ -116,17 +117,7 @@ const MaintenanceAgreements: React.FC = () => {
   };
 
   const handleAddAgreement = () => {
-    setSelectedAgreement({
-      maNumber: "",
-      projectName: "",
-      customerName: "",
-      projectId: "",
-      customerId: "",
-      startDate: "",
-      endDate: "",
-      maturity: "",
-      status: "",
-    });
+    setSelectedAgreement(null);
     onOpen();
   };
 
@@ -362,9 +353,11 @@ const MaintenanceAgreements: React.FC = () => {
                 <Td textAlign="center">{agreement.projectName}</Td>
                 <Td textAlign="center">{agreement.customerName}</Td>
                 <Td textAlign="center">
-                  {dayjs(agreement.startDate).format("DD/MM/YYYY")}
+                  {dayjs(agreement.startDate.toDate()).format("DD/MM/YYYY")}
                 </Td>
-                <Td textAlign="center">{agreement.endDate}</Td>
+                <Td textAlign="center">
+                  {dayjs(agreement.endDate.toDate()).format("DD/MM/YYYY")}
+                </Td>
                 <Td textAlign="center">{agreement.maturity}</Td>
                 <Td textAlign="center">
                   {getStatusButton(agreement.maturity)}

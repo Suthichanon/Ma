@@ -362,6 +362,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
               p={1}
               w="350px"
               position="relative"
+              overflow="hidden" // เพิ่มการใช้ overflow
             >
               <Button
                 flex="1"
@@ -370,6 +371,9 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                 borderRadius="md"
                 zIndex={1}
                 position="relative"
+                boxShadow={
+                  customerType === "corporation" ? "0 0 0 1px white" : "none"
+                } // เพิ่ม box-shadow
               >
                 Corporation
               </Button>
@@ -380,6 +384,9 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                 borderRadius="md"
                 zIndex={1}
                 position="relative"
+                boxShadow={
+                  customerType === "individual" ? "0 0 0 1px white" : "none"
+                } // เพิ่ม box-shadow
               >
                 Individual
               </Button>
@@ -387,8 +394,8 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                 position="absolute"
                 top="1"
                 bottom="1"
-                left={customerType === "corporation" ? "0" : "49%"}
-                width="50%"
+                left={customerType === "corporation" ? "2%" : "50%"}
+                width="40%"
                 bg="#ffffff"
                 borderRadius="md"
                 transition="left 0.5s ease"
