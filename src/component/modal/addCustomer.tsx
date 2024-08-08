@@ -17,6 +17,8 @@ import {
   Box,
   RadioGroup,
   FormErrorMessage,
+  InputGroup,
+  InputRightElement,
 } from "@chakra-ui/react";
 import {
   getAuth,
@@ -35,6 +37,7 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { ColorBtn } from "../templatecolor";
+import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons"; // Import icons
 
 interface CustomerModalProps {
   addCustomer: (newCustomer: Customer) => void;
@@ -74,6 +77,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
 }) => {
   const [customerType, setCustomerType] = useState("corporation");
   const [branchType, setBranchType] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // State for password visibility
   const [formData, setFormData] = useState<Customer>({
     username: "",
     email: "",
@@ -362,7 +366,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
               p={1}
               w="350px"
               position="relative"
-              overflow="hidden" // เพิ่มการใช้ overflow
+              overflow="hidden"
             >
               <Button
                 flex="1"
@@ -373,7 +377,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                 position="relative"
                 boxShadow={
                   customerType === "corporation" ? "0 0 0 1px white" : "none"
-                } // เพิ่ม box-shadow
+                }
               >
                 Corporation
               </Button>
@@ -386,7 +390,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                 position="relative"
                 boxShadow={
                   customerType === "individual" ? "0 0 0 1px white" : "none"
-                } // เพิ่ม box-shadow
+                }
               >
                 Individual
               </Button>
@@ -426,6 +430,9 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                   placeholder="Email"
                   value={formData.email}
                   onChange={handleInputChange}
+                  isReadOnly={!!customer}
+                  bg={customer ? "gray.100" : "white"}
+                  pointerEvents={customer ? "none" : "auto"} // Apply color to indicate read-only
                 />
                 {errors.email && (
                   <FormErrorMessage>{errors.email}</FormErrorMessage>
@@ -433,13 +440,26 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
               </FormControl>
               <FormControl isRequired mt={4} isInvalid={!!errors.password}>
                 <FormLabel>Password</FormLabel>
-                <Input
-                  type="password"
-                  name="password"
-                  placeholder="Password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                />
+                <InputGroup>
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    placeholder="Password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    isReadOnly={!!customer}
+                    bg={customer ? "gray.100" : "white"} // Apply color to indicate read-only
+                    pointerEvents={customer ? "none" : "auto"}
+                  />
+                  <InputRightElement>
+                    <Button
+                      variant="link"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <ViewOffIcon /> : <ViewIcon />}
+                    </Button>
+                  </InputRightElement>
+                </InputGroup>
                 {errors.password && (
                   <FormErrorMessage>{errors.password}</FormErrorMessage>
                 )}
@@ -561,10 +581,10 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                 )}
               </FormControl>
               <FormControl isRequired mt={4} isInvalid={!!errors.contactEmail}>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>Contact Email</FormLabel>
                 <Input
                   name="contactEmail"
-                  placeholder="Email"
+                  placeholder="Contact Email"
                   value={formData.contactEmail}
                   onChange={handleInputChange}
                 />
@@ -602,13 +622,25 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
               </FormControl>
               <FormControl isRequired mt={4} isInvalid={!!errors.password}>
                 <FormLabel>Password</FormLabel>
-                <Input
-                  type="password"
-                  name="password"
-                  placeholder="Password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                />
+                <InputGroup>
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    name="password"
+                    placeholder="Password"
+                    value={formData.password}
+                    onChange={handleInputChange}
+                    isReadOnly={!!customer}
+                    bg={customer ? "gray.100" : "white"} // Apply color to indicate read-only
+                  />
+                  <InputRightElement>
+                    <Button
+                      variant="link"
+                      onClick={() => setShowPassword(!showPassword)}
+                    >
+                      {showPassword ? <ViewOffIcon /> : <ViewIcon />}
+                    </Button>
+                  </InputRightElement>
+                </InputGroup>
                 {errors.password && (
                   <FormErrorMessage>{errors.password}</FormErrorMessage>
                 )}
@@ -687,10 +719,10 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                 )}
               </FormControl>
               <FormControl isRequired mt={4} isInvalid={!!errors.contactEmail}>
-                <FormLabel>Email</FormLabel>
+                <FormLabel>Contact Email</FormLabel>
                 <Input
                   name="contactEmail"
-                  placeholder="Email"
+                  placeholder="Contact Email"
                   value={formData.contactEmail}
                   onChange={handleInputChange}
                 />
