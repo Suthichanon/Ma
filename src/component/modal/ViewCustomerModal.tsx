@@ -20,7 +20,7 @@ import {
   InputRightElement,
 } from "@chakra-ui/react";
 import { ColorBtn } from "../templatecolor";
-import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons"; // Import icons
+import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 
 interface ViewCustomerModalProps {
   customer?: Customer | null;
@@ -53,7 +53,7 @@ const ViewCustomerModal: React.FC<ViewCustomerModalProps> = ({
   isOpen,
   onClose,
 }) => {
-  const [showPassword, setShowPassword] = useState(false); // state to toggle password visibility
+  const [showPassword, setShowPassword] = useState(false);
 
   if (!customer) return null;
 
@@ -74,6 +74,8 @@ const ViewCustomerModal: React.FC<ViewCustomerModalProps> = ({
               p={1}
               w="350px"
               position="relative"
+              overflow="hidden"
+              boxShadow="0 0 5px rgba(0,0,0,0.1)"
             >
               <Button
                 flex="1"
@@ -107,7 +109,7 @@ const ViewCustomerModal: React.FC<ViewCustomerModalProps> = ({
                 position="absolute"
                 top="1"
                 bottom="1"
-                left={customer.customerType === "corporation" ? "0" : "49%"}
+                left={customer.customerType === "corporation" ? "1%" : "50%"}
                 width="50%"
                 bg="#ffffff"
                 borderRadius="md"
