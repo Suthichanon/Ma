@@ -227,13 +227,6 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
           ...newTicket,
         });
         addTicket({ ...newTicket, id: docRef.id });
-        toast({
-          title: "Success",
-          description: "Ticket added successfully.",
-          status: "success",
-          duration: 3000,
-          isClosable: true,
-        });
       }
 
       onClose();
