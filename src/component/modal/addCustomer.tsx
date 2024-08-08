@@ -37,7 +37,7 @@ import {
   getDocs,
 } from "firebase/firestore";
 import { ColorBtn } from "../templatecolor";
-import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons"; // Import icons
+import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 
 interface CustomerModalProps {
   addCustomer: (newCustomer: Customer) => void;
@@ -150,6 +150,15 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
 
   const handleCustomerTypeChange = (value: string) => {
     setCustomerType(value);
+    setBranchType(""); // Reset branchType when customer type changes
+  };
+
+  const handleBranchTypeChange = (value: string) => {
+    setBranchType(value);
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      branchType: "",
+    }));
   };
 
   const handleInputChange = (
@@ -159,6 +168,10 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
     setFormData((prevData) => ({
       ...prevData,
       [name]: value,
+    }));
+    setErrors((prevErrors) => ({
+      ...prevErrors,
+      [name]: "",
     }));
   };
 
@@ -492,7 +505,10 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
               </FormControl>
               <FormControl isRequired mt={4} isInvalid={!!errors.branchType}>
                 <FormLabel>Branch</FormLabel>
-                <RadioGroup onChange={setBranchType} value={branchType}>
+                <RadioGroup
+                  onChange={handleBranchTypeChange}
+                  value={branchType}
+                >
                   <HStack>
                     <Radio value="head-office" colorScheme="gray">
                       Head Office
@@ -615,6 +631,9 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                   placeholder="Email"
                   value={formData.email}
                   onChange={handleInputChange}
+                  isReadOnly={!!customer}
+                  bg={customer ? "gray.100" : "white"}
+                  pointerEvents={customer ? "none" : "auto"} // Apply color to indicate read-only
                 />
                 {errors.email && (
                   <FormErrorMessage>{errors.email}</FormErrorMessage>
@@ -631,6 +650,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                     onChange={handleInputChange}
                     isReadOnly={!!customer}
                     bg={customer ? "gray.100" : "white"} // Apply color to indicate read-only
+                    pointerEvents={customer ? "none" : "auto"}
                   />
                   <InputRightElement>
                     <Button

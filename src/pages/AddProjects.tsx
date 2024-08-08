@@ -97,6 +97,12 @@ const Projects: React.FC = () => {
         project.id === updatedProject.id ? updatedProject : project
       )
     );
+    toast({
+      title: "Project updated successfully",
+      status: "success",
+      duration: 3000,
+      isClosable: true,
+    });
   };
 
   const handleEdit = (project: Project) => {
@@ -113,9 +119,22 @@ const Projects: React.FC = () => {
     try {
       await deleteDoc(doc(db, "projects", projectId));
       setProjects(projects.filter((project) => project.id !== projectId));
+      toast({
+        title: "Project deleted successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
       onDeleteClose();
     } catch (error) {
       console.error("Error deleting project:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete project.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
     }
   };
 

@@ -42,7 +42,7 @@ interface Project {
   projectId: string;
   projectName: string;
   customerName: string;
-  customerId: string; 
+  customerId: string;
 }
 
 interface FirestoreProjectData {
@@ -135,7 +135,8 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
 
     if (name === "customerName") {
       const selectedCustomer = customers.find(
-        (customer) => `${customer.customerId} - ${customer.customerName}` === value
+        (customer) =>
+          `${customer.customerId} - ${customer.customerName}` === value
       );
       setFormData((prevData) => ({
         ...prevData,
@@ -214,7 +215,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
         });
         return;
       }
-      
+
       setIsSaving(true); // ปิดการใช้งานปุ่ม Save
       try {
         let newProjectId = formData.projectId;
@@ -241,6 +242,13 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
         resetForm();
       } catch (error) {
         console.error("Error saving project:", error);
+        toast({
+          title: "Error",
+          description: "Failed to save project.",
+          status: "error",
+          duration: 3000,
+          isClosable: true,
+        });
       } finally {
         setIsSaving(false); // เปิดการใช้งานปุ่ม Save อีกครั้ง
       }
@@ -275,7 +283,10 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
               placeholder="Select Customer"
             >
               {customers.map((customer) => (
-                <option key={customer.id} value={`${customer.customerId} - ${customer.customerName}`}>
+                <option
+                  key={customer.id}
+                  value={`${customer.customerId} - ${customer.customerName}`}
+                >
                   {customer.customerId} - {customer.customerName}
                 </option>
               ))}
