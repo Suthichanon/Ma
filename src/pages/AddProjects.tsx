@@ -47,7 +47,7 @@ interface Project {
   projectId: string;
   projectName: string;
   customerName: string;
-  customerId: string; 
+  customerId: string;
 }
 
 const Projects: React.FC = () => {
@@ -118,13 +118,32 @@ const Projects: React.FC = () => {
   const handleDelete = async (projectId: string) => {
     try {
       await deleteDoc(doc(db, "projects", projectId));
-      setProjects(projects.filter((project) => project.id !== projectId));
+      setProjects((prevProjects) => {
+        const updatedProjects = prevProjects.filter(
+          (project) => project.id !== projectId
+        );
+
+        // Check if the current page has no items left after deletion
+        const totalRemainingItems = updatedProjects.length;
+        const totalPagesAfterDeletion = Math.ceil(
+          totalRemainingItems / rowsPerPage
+        );
+
+        // If the current page is now empty and it's not the first page, go back one page
+        if (currentPage > totalPagesAfterDeletion && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+
+        return updatedProjects;
+      });
+
       toast({
         title: "Project deleted successfully",
         status: "success",
         duration: 3000,
         isClosable: true,
       });
+
       onDeleteClose();
     } catch (error) {
       console.error("Error deleting project:", error);

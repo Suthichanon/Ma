@@ -68,6 +68,54 @@ interface Customer {
   branchType: string;
 }
 
+const validateUsername = (username: string) => {
+  const usernameRegex = /^[a-zA-Z0-9]+$/;
+  return usernameRegex.test(username);
+};
+
+const validateEmail = (email: string) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const validatePassword = (password: string) => {
+  return password.length >= 8;
+};
+
+const validateTaxId = (taxId: string) => {
+  return taxId.length === 10 || taxId.length === 13;
+};
+
+const validateIdCard = (idCard: string) => {
+  return idCard.length === 13;
+};
+
+const getLastCustomerId = async (): Promise<string | null> => {
+  const customersCollection = collection(db, "customers");
+  const customersQuery = query(
+    customersCollection,
+    orderBy("customerId", "desc"),
+    limit(1)
+  );
+  const querySnapshot = await getDocs(customersQuery);
+
+  if (!querySnapshot.empty) {
+    const lastCustomer = querySnapshot.docs[0].data() as Customer;
+    return lastCustomer.customerId || null;
+  }
+  return null;
+};
+
+const generateNewCustomerId = (lastCustomerId: string | null): string => {
+  if (!lastCustomerId) {
+    return "CU000001";
+  }
+
+  const numericPart = parseInt(lastCustomerId.replace("CU", ""), 10);
+  const newNumericPart = numericPart + 1;
+  return `CU${newNumericPart.toString().padStart(6, "0")}`;
+};
+
 const CustomerModal: React.FC<CustomerModalProps> = ({
   addCustomer,
   updateCustomer,
@@ -77,7 +125,9 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
 }) => {
   const [customerType, setCustomerType] = useState("corporation");
   const [branchType, setBranchType] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // State for password visibility
+  const [showPassword, setShowPassword] = useState(false);
+  const [isFormValid, setIsFormValid] = useState(false);
+  const [isSaving, setIsSaving] = useState(false); // เพิ่มสถานะการบันทึก
   const [formData, setFormData] = useState<Customer>({
     username: "",
     email: "",
@@ -125,6 +175,20 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
     }
   }, [customer, isOpen]);
 
+  useEffect(() => {
+    setIsFormValid(
+      formData.username !== "" &&
+        formData.email !== "" &&
+        formData.password !== "" &&
+        formData.customerName !== "" &&
+        (formData.taxIdOrIdCard !== "" || formData.idCard !== "") &&
+        formData.address !== "" &&
+        formData.contactName !== "" &&
+        formData.mobile !== "" &&
+        formData.contactEmail !== ""
+    );
+  }, [formData]);
+
   const resetForm = () => {
     setFormData({
       username: "",
@@ -150,7 +214,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
 
   const handleCustomerTypeChange = (value: string) => {
     setCustomerType(value);
-    setBranchType(""); // Reset branchType when customer type changes
+    setBranchType("");
   };
 
   const handleBranchTypeChange = (value: string) => {
@@ -173,54 +237,6 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
       ...prevErrors,
       [name]: "",
     }));
-  };
-
-  const validateUsername = (username: string) => {
-    const usernameRegex = /^[a-zA-Z0-9]+$/;
-    return usernameRegex.test(username);
-  };
-
-  const validateEmail = (email: string) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const validatePassword = (password: string) => {
-    return password.length >= 8;
-  };
-
-  const validateTaxId = (taxId: string) => {
-    return taxId.length === 10 || taxId.length === 13;
-  };
-
-  const validateIdCard = (idCard: string) => {
-    return idCard.length === 13;
-  };
-
-  const getLastCustomerId = async (): Promise<string | null> => {
-    const customersCollection = collection(db, "customers");
-    const customersQuery = query(
-      customersCollection,
-      orderBy("customerId", "desc"),
-      limit(1)
-    );
-    const querySnapshot = await getDocs(customersQuery);
-
-    if (!querySnapshot.empty) {
-      const lastCustomer = querySnapshot.docs[0].data() as Customer;
-      return lastCustomer.customerId || null;
-    }
-    return null;
-  };
-
-  const generateNewCustomerId = (lastCustomerId: string | null): string => {
-    if (!lastCustomerId) {
-      return "CU000001";
-    }
-
-    const numericPart = parseInt(lastCustomerId.replace("CU", ""), 10);
-    const newNumericPart = numericPart + 1;
-    return `CU${newNumericPart.toString().padStart(6, "0")}`;
   };
 
   const handleSave = async () => {
@@ -306,6 +322,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
     const isValid = Object.values(newErrors).every((error) => !error);
 
     if (isValid) {
+      setIsSaving(true); // กำหนดให้ isSaving เป็น true เมื่อเริ่มการบันทึก
       const auth = getAuth();
       try {
         const signInMethods = await fetchSignInMethodsForEmail(
@@ -313,7 +330,6 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
           formData.email
         );
         if (signInMethods.length === 0 && !customer) {
-          // User does not exist and it's a new customer, create a new user
           await createUserWithEmailAndPassword(
             auth,
             formData.email,
@@ -337,11 +353,9 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
         };
 
         if (customer && customer.id) {
-          // Update existing customer, don't change customerId
           await updateDoc(doc(db, "customers", customer.id), customerData);
           updateCustomer(newCustomer);
         } else {
-          // Add new customer
           const docRef = await addDoc(
             collection(db, "customers"),
             customerData
@@ -351,13 +365,15 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
         }
 
         onClose();
-        resetForm(); // รีเซ็ทฟอร์มหลังจากบันทึกข้อมูลเสร็จ
+        resetForm();
       } catch (error) {
         console.error("Error creating or checking user:", error);
         setErrors((prevErrors) => ({
           ...prevErrors,
           email: "Error creating or checking user. Please try again.",
         }));
+      } finally {
+        setIsSaving(false); // กำหนดให้ isSaving เป็น false หลังการบันทึกสำเร็จหรือเกิดข้อผิดพลาด
       }
     }
   };
@@ -445,7 +461,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                   onChange={handleInputChange}
                   isReadOnly={!!customer}
                   bg={customer ? "gray.100" : "white"}
-                  pointerEvents={customer ? "none" : "auto"} // Apply color to indicate read-only
+                  pointerEvents={customer ? "none" : "auto"}
                 />
                 {errors.email && (
                   <FormErrorMessage>{errors.email}</FormErrorMessage>
@@ -461,7 +477,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                     value={formData.password}
                     onChange={handleInputChange}
                     isReadOnly={!!customer}
-                    bg={customer ? "gray.100" : "white"} // Apply color to indicate read-only
+                    bg={customer ? "gray.100" : "white"}
                     pointerEvents={customer ? "none" : "auto"}
                   />
                   <InputRightElement>
@@ -633,7 +649,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                   onChange={handleInputChange}
                   isReadOnly={!!customer}
                   bg={customer ? "gray.100" : "white"}
-                  pointerEvents={customer ? "none" : "auto"} // Apply color to indicate read-only
+                  pointerEvents={customer ? "none" : "auto"}
                 />
                 {errors.email && (
                   <FormErrorMessage>{errors.email}</FormErrorMessage>
@@ -649,7 +665,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
                     value={formData.password}
                     onChange={handleInputChange}
                     isReadOnly={!!customer}
-                    bg={customer ? "gray.100" : "white"} // Apply color to indicate read-only
+                    bg={customer ? "gray.100" : "white"}
                     pointerEvents={customer ? "none" : "auto"}
                   />
                   <InputRightElement>
@@ -762,6 +778,7 @@ const CustomerModal: React.FC<CustomerModalProps> = ({
               colorScheme="green"
               bg={ColorBtn.AddBtnBg}
               onClick={handleSave}
+              isDisabled={!isFormValid || isSaving} // ปิดการใช้งานปุ่ม Save เมื่อข้อมูลไม่ครบหรือกำลังบันทึกข้อมูล
             >
               Save
             </Button>

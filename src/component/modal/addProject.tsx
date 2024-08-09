@@ -77,6 +77,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
     customerName: "",
   });
   const [isSaving, setIsSaving] = useState(false); // สถานะการบันทึก
+  const [isFormValid, setIsFormValid] = useState(false); // สถานะของฟอร์มว่าข้อมูลครบหรือไม่
   const toast = useToast();
 
   useEffect(() => {
@@ -93,16 +94,15 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
       const customerList = querySnapshot.docs.map(
         (doc) => ({ id: doc.id, ...doc.data() } as Customer)
       );
-      // Sort customers by customerId if it exists
       customerList.sort((a, b) => {
         if (a.customerId && b.customerId) {
           return a.customerId.localeCompare(b.customerId);
         } else if (a.customerId) {
-          return -1; // a comes first
+          return -1; 
         } else if (b.customerId) {
-          return 1; // b comes first
+          return 1; 
         } else {
-          return 0; // No change in order
+          return 0;
         }
       });
       setCustomers(customerList);
@@ -110,6 +110,13 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
 
     fetchCustomers();
   }, []);
+
+  useEffect(() => {
+    // ตรวจสอบว่าข้อมูลครบหรือไม่
+    setIsFormValid(
+      formData.projectName !== "" && formData.customerName !== ""
+    );
+  }, [formData]);
 
   const resetForm = () => {
     setFormData({
@@ -197,7 +204,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
     );
     const querySnapshot = await getDocs(projectsQuery);
     const projectNames = querySnapshot.docs
-      .filter((doc) => doc.id !== project?.id) // กรองโปรเจคที่กำลังแก้ไขออก
+      .filter((doc) => doc.id !== project?.id)
       .map((doc) => doc.data().projectName);
     return projectNames.includes(formData.projectName);
   };
@@ -216,7 +223,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
         return;
       }
 
-      setIsSaving(true); // ปิดการใช้งานปุ่ม Save
+      setIsSaving(true); 
       try {
         let newProjectId = formData.projectId;
         if (!project) {
@@ -250,7 +257,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
           isClosable: true,
         });
       } finally {
-        setIsSaving(false); // เปิดการใช้งานปุ่ม Save อีกครั้ง
+        setIsSaving(false); 
       }
     }
   };
@@ -305,7 +312,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
               colorScheme="red"
               bg={ColorBtn.AddBtnBg}
               onClick={handleSave}
-              isDisabled={isSaving} // ปิดการใช้งานปุ่ม Save เมื่อกำลังบันทึกข้อมูล
+              isDisabled={!isFormValid || isSaving} // ปิดการใช้งานปุ่ม Save เมื่อข้อมูลไม่ครบ
             >
               Save
             </Button>

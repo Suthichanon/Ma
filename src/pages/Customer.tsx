@@ -104,6 +104,11 @@ const Customers: React.FC = () => {
     fetchCustomers();
   }, []);
 
+  useEffect(() => {
+    // อัปเดตหน้าเมื่อ rowsPerPage เปลี่ยนแปลง
+    setCurrentPage(1);
+  }, [rowsPerPage]);
+
   const addCustomer = (newCustomer: Customer) => {
     setCustomers((prevCustomers) => {
       const updatedCustomers = [...prevCustomers, newCustomer];
@@ -163,9 +168,22 @@ const Customers: React.FC = () => {
         const updatedCustomers = prevCustomers.filter(
           (customer) => customer.id !== customerId
         );
+
+        // Check if the current page has no items left after deletion
+        const totalRemainingItems = updatedCustomers.length;
+        const totalPagesAfterDeletion = Math.ceil(
+          totalRemainingItems / rowsPerPage
+        );
+
+        // If the current page is now empty and it's not the first page, go back one page
+        if (currentPage > totalPagesAfterDeletion && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+
         updatedCustomers.sort((a, b) =>
           (a.customerId ?? "").localeCompare(b.customerId ?? "")
         );
+
         return updatedCustomers;
       });
       toast({
@@ -200,7 +218,6 @@ const Customers: React.FC = () => {
     event: React.ChangeEvent<HTMLSelectElement>
   ) => {
     setRowsPerPage(Number(event.target.value));
-    setCurrentPage(1); // รีเซ็ตหน้าเมื่อเปลี่ยนจำนวนแถวต่อหน้า
   };
 
   const totalPages = Math.ceil(customers.length / rowsPerPage);

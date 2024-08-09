@@ -124,12 +124,42 @@ const MaintenanceAgreements: React.FC = () => {
   const handleDelete = async (agreementId: string) => {
     try {
       await deleteDoc(doc(db, "maintenanceAgreements", agreementId));
-      setAgreements(
-        agreements.filter((agreement) => agreement.id !== agreementId)
-      );
+      setAgreements((prevAgreements) => {
+        const updatedAgreements = prevAgreements.filter(
+          (agreement) => agreement.id !== agreementId
+        );
+
+        // Check if the current page has no items left after deletion
+        const totalRemainingItems = updatedAgreements.length;
+        const totalPagesAfterDeletion = Math.ceil(
+          totalRemainingItems / rowsPerPage
+        );
+
+        // If the current page is now empty and it's not the first page, go back one page
+        if (currentPage > totalPagesAfterDeletion && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+
+        return updatedAgreements;
+      });
+
+      toast({
+        title: "Agreement deleted successfully",
+        status: "success",
+        duration: 3000,
+        isClosable: true,
+      });
+
       onDeleteClose();
     } catch (error) {
       console.error("Error deleting agreement:", error);
+      toast({
+        title: "Error",
+        description: "Failed to delete agreement.",
+        status: "error",
+        duration: 3000,
+        isClosable: true,
+      });
     }
   };
 

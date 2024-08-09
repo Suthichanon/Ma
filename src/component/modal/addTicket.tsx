@@ -58,11 +58,13 @@ interface SupportTicket {
   projectName: string;
   issueDescription: string;
   typeIssue: string;
+  customerId?: string;
 }
 
 interface MaintenanceAgreement {
   maNumber: string;
   projectName: string;
+  customerId: string;
 }
 
 const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
@@ -79,6 +81,7 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
     projectName: "",
     issueDescription: "",
     typeIssue: "",
+    customerId: "",
   });
   const [maNumbers, setMaNumbers] = useState<MaintenanceAgreement[]>([]);
   const [searchResults, setSearchResults] = useState<MaintenanceAgreement[]>(
@@ -86,6 +89,7 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
   );
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isSaving, setIsSaving] = useState(false);
+  const [isFormValid, setIsFormValid] = useState(false); // State for form validation
   const [errors, setErrors] = useState<Partial<SupportTicket>>({});
 
   const tooltips: { [key: string]: string } = {
@@ -126,6 +130,16 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
     fetchMANumbers();
   }, []);
 
+  // Validate form on data change
+  useEffect(() => {
+    const isValid =
+      formData.maNumber !== "" &&
+      formData.issueDescription !== "" &&
+      formData.typeIssue !== "";
+
+    setIsFormValid(isValid);
+  }, [formData]);
+
   const resetForm = () => {
     setFormData({
       ticketId: "",
@@ -133,6 +147,7 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
       projectName: "",
       issueDescription: "",
       typeIssue: "",
+      customerId: "",
     });
     setSearchQuery("");
     setSearchResults([]);
@@ -223,6 +238,13 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
           isClosable: true,
         });
       } else {
+        const maRecord = maNumbers.find(
+          (ma) => ma.maNumber === formData.maNumber
+        );
+        if (maRecord) {
+          newTicket.customerId = maRecord.customerId;
+        }
+
         const docRef = await addDoc(collection(db, "supportTickets"), {
           ...newTicket,
         });
@@ -273,8 +295,8 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
                 onChange={handleSearchChange}
                 placeholder="exp.MA00001"
                 isReadOnly={!!ticket}
-                bg={ticket ? "gray.100" : "white"} // Add background color for read-only state
-                pointerEvents={ticket ? "none" : "auto"} // Disable pointer events for read-only state
+                bg={ticket ? "gray.100" : "white"}
+                pointerEvents={ticket ? "none" : "auto"}
               />
               {searchResults.length > 0 && !ticket && (
                 <Box
@@ -295,6 +317,7 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
                             ...prevData,
                             maNumber: result.maNumber,
                             projectName: result.projectName,
+                            customerId: result.customerId, // กำหนด customerId เมื่อเลือก MA Number
                           }));
                           setSearchQuery(result.maNumber);
                           setSearchResults([]);
@@ -374,6 +397,7 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
               onClick={handleSave}
               isLoading={isSaving}
               loadingText="Saving..."
+              isDisabled={!isFormValid} // Disable button if form is not valid
             >
               Save
             </Button>

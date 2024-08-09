@@ -145,15 +145,32 @@ const SupportTickets: React.FC = () => {
   const handleDelete = async (ticketId: string) => {
     try {
       await deleteDoc(doc(db, "supportTickets", ticketId));
-      setTickets((prevTickets) =>
-        prevTickets.filter((ticket) => ticket.id !== ticketId)
-      );
+      setTickets((prevTickets) => {
+        const updatedTickets = prevTickets.filter(
+          (ticket) => ticket.id !== ticketId
+        );
+
+        // Check if the current page has no items left after deletion
+        const totalRemainingItems = updatedTickets.length;
+        const totalPagesAfterDeletion = Math.ceil(
+          totalRemainingItems / rowsPerPage
+        );
+
+        // If the current page is now empty and it's not the first page, go back one page
+        if (currentPage > totalPagesAfterDeletion && currentPage > 1) {
+          setCurrentPage(currentPage - 1);
+        }
+
+        return updatedTickets;
+      });
+
       toast({
         title: "Ticket deleted successfully",
         status: "success",
         duration: 3000,
         isClosable: true,
       });
+
       onDeleteClose();
     } catch (error) {
       console.error("Error deleting ticket:", error);
