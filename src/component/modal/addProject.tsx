@@ -98,9 +98,9 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
         if (a.customerId && b.customerId) {
           return a.customerId.localeCompare(b.customerId);
         } else if (a.customerId) {
-          return -1; 
+          return -1;
         } else if (b.customerId) {
-          return 1; 
+          return 1;
         } else {
           return 0;
         }
@@ -113,9 +113,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
 
   useEffect(() => {
     // ตรวจสอบว่าข้อมูลครบหรือไม่
-    setIsFormValid(
-      formData.projectName !== "" && formData.customerName !== ""
-    );
+    setIsFormValid(formData.projectName !== "" && formData.customerName !== "");
   }, [formData]);
 
   const resetForm = () => {
@@ -171,14 +169,16 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
 
   const generateNewProjectId = (lastProjectId: string | null): string => {
     if (!lastProjectId) {
-      return "LS00001";
+      return "LS000001"; // เริ่มต้นด้วย LS ตามด้วยเลข 6 หลัก
     }
 
     const numericPart = parseInt(lastProjectId.replace("LS", ""), 10);
     const newNumericPart = numericPart + 1;
-    const newProjectId = `LS${newNumericPart.toString().padStart(5, "0")}`;
 
-    return newProjectId;
+    // คำนวณความยาวของส่วนตัวเลขที่ต้องการ
+    const idLength = lastProjectId.length - 2; // 2 คือตัวอักษร "LS"
+
+    return `LS${newNumericPart.toString().padStart(idLength, "0")}`;
   };
 
   const validateForm = () => {
@@ -223,7 +223,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
         return;
       }
 
-      setIsSaving(true); 
+      setIsSaving(true);
       try {
         let newProjectId = formData.projectId;
         if (!project) {
@@ -257,7 +257,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
           isClosable: true,
         });
       } finally {
-        setIsSaving(false); 
+        setIsSaving(false);
       }
     }
   };
@@ -309,7 +309,7 @@ const ProjectModal: React.FC<ProjectModalProps> = ({
               Cancel
             </Button>
             <Button
-              colorScheme="red"
+              colorScheme="green"
               bg={ColorBtn.AddBtnBg}
               onClick={handleSave}
               isDisabled={!isFormValid || isSaving} // ปิดการใช้งานปุ่ม Save เมื่อข้อมูลไม่ครบ

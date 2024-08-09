@@ -177,19 +177,21 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
   useEffect(() => {
     if (formData.startDate && formData.endDate) {
       const end = dayjs(formData.endDate.toDate());
+      const start = dayjs(formData.startDate.toDate());
       const today = dayjs();
-      const daysDiff = end.diff(today, "day");
+      const remainingDays = end.diff(today, "day"); // คำนวณ remaining เป็นจำนวนวัน
+      const monthsDiff = end.diff(start, "month"); // คำนวณ maturity เป็นจำนวนเดือน
 
       let status = "expire";
-      if (daysDiff > 60) {
+      if (remainingDays > 60) {
         status = "active";
-      } else if (daysDiff > 0 && daysDiff <= 60) {
+      } else if (remainingDays > 0 && remainingDays <= 60) {
         status = "duration";
       }
 
       setFormData((prevData) => ({
         ...prevData,
-        maturity: `${daysDiff} DAY${daysDiff !== 1 ? "S" : ""}`,
+        maturity: `${monthsDiff} MONTH${monthsDiff !== 1 ? "S" : ""}`, // ใช้จำนวนเดือนสำหรับ maturity
         status: status,
       }));
     } else {
@@ -275,7 +277,9 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
 
     const numericPart = parseInt(lastMANumber.replace("MA", ""), 10);
     const newNumericPart = numericPart + 1;
-    return `MA${newNumericPart.toString().padStart(5, "0")}`;
+    return `MA${newNumericPart
+      .toString()
+      .padStart(lastMANumber.length - 2, "0")}`; // ปรับความยาวตัวเลขตามความยาวของ MA Number ปัจจุบัน
   };
 
   const handleSave = () => {
@@ -448,21 +452,21 @@ const MaintenanceAgreementModal: React.FC<MaintenanceAgreementModalProps> = ({
             <FormControl mt={4} isRequired>
               <FormLabel>Start Date</FormLabel>
               <Input
-                type="date"
+                type="date" // Changed from "date" to "text"
                 name="startDate"
-                value={dayjs(formData.startDate.toDate()).format("YYYY-MM-DD")}
+                value={dayjs(formData.startDate.toDate()).format("YYYY-MM-DD")} // Ensure consistent formatting
                 onChange={handleInputChange}
-                pattern="\d{2}/\d{2}/\d{4}"
               />
             </FormControl>
             <FormControl mt={4} isRequired>
               <FormLabel>End Date</FormLabel>
               <Input
-                type="text"
+                type="date"
                 name="endDate"
                 value={dayjs(formData.endDate.toDate()).format("YYYY-MM-DD")}
                 onChange={handleInputChange}
                 readOnly
+                pointerEvents={"none"}
               />
             </FormControl>
             <FormControl mt={4} isRequired>

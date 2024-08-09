@@ -44,6 +44,7 @@ import {
 import { ColorTable, ColorBtn } from "../component/templatecolor";
 import dayjs from "dayjs";
 
+
 interface MaintenanceAgreement {
   id?: string;
   maNumber: string;
@@ -61,6 +62,7 @@ interface MaintenanceAgreement {
 const MaintenanceAgreements: React.FC = () => {
   const toast = useToast();
   const [agreements, setAgreements] = useState<MaintenanceAgreement[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -75,16 +77,41 @@ const MaintenanceAgreements: React.FC = () => {
 
   const fetchAgreements = async () => {
     const querySnapshot = await getDocs(
-      query(collection(db, "maintenanceAgreements"), orderBy("maNumber"))
+        query(collection(db, "maintenanceAgreements"), orderBy("maNumber"))
     );
+
     const agreementList = querySnapshot.docs.map((doc) => {
-      const data = doc.data() as MaintenanceAgreement;
-      const endDate = data.endDate.toDate();
-      const remaining = dayjs(endDate).diff(dayjs(), "day");
-      return { ...data, id: doc.id, remaining: `${remaining} DAYS` };
+        const data = doc.data() as MaintenanceAgreement;
+        const endDate = dayjs(data.endDate.toDate());
+        const startDate = dayjs(data.startDate.toDate());
+        const now = dayjs();
+
+        // Calculate remaining days from now to end date
+        const remainingDays = endDate.diff(now, "day");
+
+        // Calculate maturity in months from start date to end date
+        const maturityMonths = endDate.diff(startDate, "month");
+
+        // Determine status based on remaining days
+        let status = "expire";
+        if (remainingDays > 60) {
+            status = "active";
+        } else if (remainingDays > 0 && remainingDays <= 60) {
+            status = "duration";
+        }
+
+        return {
+            ...data,
+            id: doc.id,
+            remaining: `${remainingDays} DAY${remainingDays !== 1 ? "S" : ""}`,
+            maturity: `${maturityMonths} MONTH${maturityMonths !== 1 ? "S" : ""}`,
+            status: status,
+        };
     });
+
     setAgreements(agreementList);
-  };
+};
+
 
   useEffect(() => {
     fetchAgreements();
@@ -180,9 +207,16 @@ const MaintenanceAgreements: React.FC = () => {
     setCurrentPage(1);
   };
 
-  const totalPages = Math.ceil(agreements.length / rowsPerPage);
+  const filteredAgreements = agreements.filter(
+    (agreement) =>
+      agreement.maNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      agreement.projectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      agreement.customerName?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredAgreements.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const selectedAgreements = agreements.slice(
+  const selectedAgreements = filteredAgreements.slice(
     startIndex,
     startIndex + rowsPerPage
   );
@@ -215,45 +249,55 @@ const MaintenanceAgreements: React.FC = () => {
     }
     return pageNumbers;
   };
+  
+  
 
-  const getStatusButton = (maturity: string): JSX.Element => {
-    const days = parseInt(maturity.split(" ")[0], 10);
+  const getStatusButton = (remaining: string | undefined): JSX.Element => {
+    if (!remaining) {
+        remaining = "0 DAYS"; // Default value when remaining is undefined
+    }
+
+    const days = parseInt(remaining.split(" ")[0], 10);
 
     if (days > 60) {
-      return (
-        <Button
-          w={"100%"}
-          color={"white"}
-          backgroundColor="#01B574"
-          _hover={{ backgroundColor: "#01A367" }} // ปรับสีเมื่อ hover
-        >
-          Active
-        </Button>
-      );
-    } else if (days > 0) {
-      return (
-        <Button
-          w={"100%"}
-          color={"white"}
-          backgroundColor="#FFB547"
-          _hover={{ backgroundColor: "#E5A23A" }} // ปรับสีเมื่อ hover
-        >
-          Duration
-        </Button>
-      );
+        return (
+            <Button
+                w={"100%"}
+                color={"white"}
+                backgroundColor="#01B574"
+                _hover={{ backgroundColor: "#01A367" }}
+                pointerEvents={"none"}
+            >
+                Active
+            </Button>
+        );
+    } else if (days > 0 && days <= 60) {
+        return (
+            <Button
+                w={"100%"}
+                color={"white"}
+                backgroundColor="#FFB547"
+                _hover={{ backgroundColor: "#E5A23A" }}
+                pointerEvents={"none"}
+            >
+                Duration
+            </Button>
+        );
     } else {
-      return (
-        <Button
-          w={"100%"}
-          color={"white"}
-          backgroundColor="#E31A1A"
-          _hover={{ backgroundColor: "#CC1717" }} // ปรับสีเมื่อ hover
-        >
-          Expire
-        </Button>
-      );
+        return (
+            <Button
+                w={"100%"}
+                color={"white"}
+                backgroundColor="#E31A1A"
+                _hover={{ backgroundColor: "#CC1717" }}
+                pointerEvents={"none"}
+            >
+                Expire
+            </Button>
+        );
     }
-  };
+};
+   
 
   return (
     <Box minH="100%" minW="100%" px={{ base: 2, lg: 12 }}>
@@ -264,7 +308,7 @@ const MaintenanceAgreements: React.FC = () => {
         </Text>
       </Box>
       <Box display={"flex"} justifyContent={"space-between"} mb={4}>
-        <InputGroup width="300px">
+        <InputGroup width={{ base: "100%", md: "500px" }}>
           <InputLeftElement
             pointerEvents="none"
             children={<SearchIcon color="gray.300" />}
@@ -272,12 +316,14 @@ const MaintenanceAgreements: React.FC = () => {
           <Input
             type="text"
             placeholder="Ma Number, Project Name, Customer Name"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </InputGroup>
         <Button
           onClick={handleAddAgreement}
           leftIcon={<FaPlusSquare />}
-          colorScheme="red"
+          colorScheme="green"
           variant="solid"
           size="lg"
           bg={ColorBtn.AddBtnBg}
@@ -297,7 +343,7 @@ const MaintenanceAgreements: React.FC = () => {
       <TableContainer
         border="1px solid"
         borderColor={ColorTable.TableBorder}
-        borderRadius="16px"
+        
       >
         <Table>
           <Thead bg={ColorTable.TableHead}>
@@ -356,7 +402,7 @@ const MaintenanceAgreements: React.FC = () => {
                 textAlign="center"
                 fontWeight={ColorTable.TableTextWeight}
               >
-                STATUS
+                REMAINING
               </Th>
               <Th
                 color={ColorTable.TableHeadText}
@@ -364,8 +410,9 @@ const MaintenanceAgreements: React.FC = () => {
                 textAlign="center"
                 fontWeight={ColorTable.TableTextWeight}
               >
-                REMAINING
+                STATUS
               </Th>
+
               <Th
                 color={ColorTable.TableHeadText}
                 fontSize={ColorTable.TableTextSize}
@@ -389,10 +436,11 @@ const MaintenanceAgreements: React.FC = () => {
                   {dayjs(agreement.endDate.toDate()).format("DD/MM/YYYY")}
                 </Td>
                 <Td textAlign="center">{agreement.maturity}</Td>
-                <Td textAlign="center">
-                  {getStatusButton(agreement.maturity)}
-                </Td>
                 <Td textAlign="center">{agreement.remaining}</Td>
+                <Td textAlign="center">
+                  {getStatusButton(agreement.remaining)}
+                </Td>
+
                 <Td textAlign="center">
                   <Menu>
                     <MenuButton
@@ -422,9 +470,12 @@ const MaintenanceAgreements: React.FC = () => {
         </Table>
       </TableContainer>
 
-      <Box display="flex" my={4} w="100%">
-        <Box display="flex" alignItems="center" flex={1}>
-          <Text>Rows per page:</Text>
+      <Box display="flex" my={4} w="100%" alignItems="center">
+        <Text>
+          Page {currentPage} of {totalPages} (Total {filteredAgreements.length}{" "}
+          agreements)
+        </Text>
+        <Box display="flex" alignItems="center" ml="auto">
           <Select
             width="80px"
             value={rowsPerPage}

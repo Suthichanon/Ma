@@ -12,7 +12,6 @@ import {
   Td,
   TableContainer,
   Text,
-  useBreakpointValue,
   Grid,
   IconButton,
   Menu,
@@ -61,14 +60,16 @@ interface Customer {
 }
 
 const Customers: React.FC = () => {
-  const inputWidth = useBreakpointValue({ base: "100%", md: "300px" });
+  
   const location = useLocation();
   const pathname = location.pathname.replace(/\//g, " ");
   const toast = useToast();
 
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const [filteredCustomers, setFilteredCustomers] = useState<Customer[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null
   );
@@ -99,13 +100,24 @@ const Customers: React.FC = () => {
         (a.customerId ?? "").localeCompare(b.customerId ?? "")
       );
       setCustomers(customerList);
+      setFilteredCustomers(customerList); // เริ่มต้นด้วยข้อมูลทั้งหมด
     };
 
     fetchCustomers();
   }, []);
 
   useEffect(() => {
-    // อัปเดตหน้าเมื่อ rowsPerPage เปลี่ยนแปลง
+    const filtered = customers.filter(
+      (customer) =>
+        (customer.customerId ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+        customer.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        customer.taxIdOrIdCard.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (customer.idCard && customer.idCard.includes(searchQuery))
+    );
+    setFilteredCustomers(filtered);
+  }, [searchQuery, customers]);
+
+  useEffect(() => {
     setCurrentPage(1);
   }, [rowsPerPage]);
 
@@ -118,7 +130,7 @@ const Customers: React.FC = () => {
       return updatedCustomers;
     });
     toast({
-      title: "add customer success",
+      title: "Add customer success",
       status: "success",
       duration: 3000,
       isClosable: true,
@@ -137,7 +149,7 @@ const Customers: React.FC = () => {
       return updatedCustomers;
     });
     toast({
-      title: "edit customer success",
+      title: "Edit customer success",
       status: "success",
       duration: 3000,
       isClosable: true,
@@ -187,7 +199,7 @@ const Customers: React.FC = () => {
         return updatedCustomers;
       });
       toast({
-        title: "delete customer success",
+        title: "Delete customer success",
         status: "success",
         duration: 3000,
         isClosable: true,
@@ -195,7 +207,7 @@ const Customers: React.FC = () => {
     } catch (error) {
       console.error("Error deleting customer:", error);
       toast({
-        title: "error to deleting customer",
+        title: "Error deleting customer",
         status: "error",
         duration: 3000,
         isClosable: true,
@@ -220,9 +232,9 @@ const Customers: React.FC = () => {
     setRowsPerPage(Number(event.target.value));
   };
 
-  const totalPages = Math.ceil(customers.length / rowsPerPage);
+  const totalPages = Math.ceil(filteredCustomers.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const selectedCustomers = customers.slice(
+  const selectedCustomers = filteredCustomers.slice(
     startIndex,
     startIndex + rowsPerPage
   );
@@ -266,12 +278,17 @@ const Customers: React.FC = () => {
       </Box>
       <Box mb={4}>
         <Grid templateColumns={{ base: "1fr", md: "1fr auto" }} gap={4}>
-          <InputGroup width={inputWidth}>
+          <InputGroup width={{base:'100%',md:'500px'}}>
             <InputLeftElement
               pointerEvents="none"
               children={<SearchIcon color="gray.300" />}
             />
-            <Input type="text" placeholder="Customer Name , Tax ID / ID Card" />
+            <Input
+              type="text"
+              placeholder="Search by Customer ID, Name, Tax ID / ID Card"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </InputGroup>
           <Button
             onClick={handleAddCustomer}
@@ -301,7 +318,7 @@ const Customers: React.FC = () => {
       <TableContainer
         border="1px solid"
         borderColor={ColorTable.TableBorder}
-        borderRadius="16px"
+        
       >
         <Table>
           <Thead bg={ColorTable.TableHead}>
@@ -413,9 +430,11 @@ const Customers: React.FC = () => {
           </Tbody>
         </Table>
       </TableContainer>
-      <Box display={"flex"} my={4} w={"100%"}>
-        <Box display="flex" alignItems={"center"} flex={1}>
-          <Text>Rows per page:</Text>
+      <Box display={"flex"} my={4} w={"100%"} alignItems="center">
+        <Text>
+          Page {currentPage} of {totalPages} (Total {filteredCustomers.length} customers)
+        </Text>
+        <Box display="flex" alignItems="center" ml="auto">
           <Select
             width="80px"
             value={rowsPerPage}

@@ -113,7 +113,8 @@ const generateNewCustomerId = (lastCustomerId: string | null): string => {
 
   const numericPart = parseInt(lastCustomerId.replace("CU", ""), 10);
   const newNumericPart = numericPart + 1;
-  return `CU${newNumericPart.toString().padStart(6, "0")}`;
+  const idLength = lastCustomerId.length - 2;
+  return `CU${newNumericPart.toString().padStart(idLength, "0")}`;
 };
 
 const CustomerModal: React.FC<CustomerModalProps> = ({

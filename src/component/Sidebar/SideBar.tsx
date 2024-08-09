@@ -79,7 +79,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
           borderRadius="12px"
         >
           <NavLink to="/dashboard" style={{ padding: 0 }}>
-            <Image src="/StaticIcon.png" />
+            <Image src="/dashboard.png" />
           </NavLink>
         </Button>
       </Flex>
@@ -105,7 +105,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
           borderRadius="12px"
         >
           <NavLink to="/customers/customer" style={{ padding: 0 }}>
-            <Image src="/CustomersIcon.png" />
+            <Image src="/customer.png" />
           </NavLink>
         </Button>
       </Flex>
@@ -131,7 +131,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
           borderRadius="12px"
         >
           <NavLink to="/projects/project" style={{ padding: 0 }}>
-            <Image src="/ProjectsIcon.png" />
+            <Image src="/project.png" />
           </NavLink>
         </Button>
       </Flex>
@@ -157,7 +157,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
           borderRadius="12px"
         >
           <NavLink to="/support/ticket" style={{ padding: 0 }}>
-            <Image src="/SupTicketsIcon.png" />
+            <Image src="/ticket.png" />
           </NavLink>
         </Button>
       </Flex>
@@ -183,7 +183,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
           borderRadius="12px"
         >
           <NavLink to="/user/manageacc" style={{ padding: 0 }}>
-            <Image src="/ServiceAgentsIcon.png" />
+            <Image src="/manage.png" />
           </NavLink>
         </Button>
       </Flex>
@@ -202,6 +202,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
       w={isRightSidebarOpen ? "60" : "0"}
       display={isRightSidebarOpen ? "flex" : "none"}
       transition="width 0.2s"
+      borderRight={`1px solid #d9d9d9}`}
     >
       {showRightSidebar[0] && (
         <Box>
@@ -215,7 +216,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
           >
             Dashboard
           </Text>
-          <Flex w="100%" mt="5" px={0}>
+          <Flex flexDirection={'column'} ml={1} mr={1} mt="5" >
             <Box
               display="flex"
               alignItems="center"
@@ -249,7 +250,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
           >
             Customers
           </Text>
-          <Flex flexDirection="column" mt="5">
+          <Flex flexDirection="column" ml={1} mr={1} mt="5" >
             <Box
               display="flex"
               alignItems="center"
@@ -299,7 +300,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
           >
             Projects
           </Text>
-          <Flex flexDirection="column" mt="5">
+          <Flex flexDirection="column" ml={1} mr={1} mt="5">
             <Box
               display="flex"
               alignItems="center"
@@ -349,7 +350,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
           >
             Support Tickets
           </Text>
-          <Flex flexDirection="column" mt="5">
+          <Flex flexDirection="column" ml={1} mr={1} mt="5">
             <Box
               display="flex"
               alignItems="center"
@@ -382,7 +383,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
           >
             Support Agents
           </Text>
-          <Flex flexDirection="column" mt="5">
+          <Flex flexDirection="column" ml={1} mr={1} mt="5">
             <Box
               display="flex"
               alignItems="center"
@@ -402,6 +403,14 @@ const Sidebar: React.FC<SidebarProps> = () => {
           </Flex>
         </Box>
       )}
+      <Box position={"absolute"} bottom={10} left={"112px"}>
+        <Text mb={2} textAlign={"center"}>
+          Powered By
+        </Text>
+        <Box w={"100%"}>
+          <Image src="/Lucas.png" alt="LogoLucus" />
+        </Box>
+      </Box>
     </Flex>
   );
 

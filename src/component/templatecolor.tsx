@@ -20,9 +20,9 @@ const FieldColor = {
 };
 
 const ColorSideBar ={
-  Sidebar: "#FC0A18",
+  Sidebar: "#262626",
   BtnSideBar: "#262626",
-  BtnSideBarHover: "#262626",
+  BtnSideBarHover: "#3A3838",
   rSidebar: '#ffffff',
   BtnSideBarActive: "#262626",
   Breadcrumb: "#ffffff",

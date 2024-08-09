@@ -55,6 +55,7 @@ interface SupportTicket {
 const SupportTickets: React.FC = () => {
   const toast = useToast();
   const [tickets, setTickets] = useState<SupportTicket[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const {
@@ -202,9 +203,18 @@ const SupportTickets: React.FC = () => {
     setCurrentPage(1);
   };
 
-  const totalPages = Math.ceil(tickets.length / rowsPerPage);
+  const filteredTickets = tickets.filter(
+    (ticket) =>
+      ticket.maNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      ticket.projectName.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const totalPages = Math.ceil(filteredTickets.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const selectedTickets = tickets.slice(startIndex, startIndex + rowsPerPage);
+  const selectedTickets = filteredTickets.slice(
+    startIndex,
+    startIndex + rowsPerPage
+  );
 
   const renderPageNumbers = () => {
     const pageNumbers = [];
@@ -244,17 +254,22 @@ const SupportTickets: React.FC = () => {
         </Text>
       </Box>
       <Box display={"flex"} justifyContent={"space-between"} mb={4}>
-        <InputGroup width="300px">
+        <InputGroup width={{ base: "100%", md: "500px" }}>
           <InputLeftElement
             pointerEvents="none"
             children={<SearchIcon color="gray.300" />}
           />
-          <Input type="text" placeholder="Ma Number, Project ID" />
+          <Input
+            type="text"
+            placeholder="MA Number, Project Name"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+          />
         </InputGroup>
         <Button
           onClick={handleAddTicket}
           leftIcon={<FaPlusSquare />}
-          colorScheme="red"
+          colorScheme="green"
           variant="solid"
           size="lg"
           bg={ColorBtn.AddBtnBg}
@@ -273,7 +288,7 @@ const SupportTickets: React.FC = () => {
       <TableContainer
         border="1px solid"
         borderColor={ColorTable.TableBorder}
-        borderRadius="16px"
+        
       >
         <Table>
           <Thead bg={ColorTable.TableHead}>
@@ -380,9 +395,11 @@ const SupportTickets: React.FC = () => {
         </Table>
       </TableContainer>
 
-      <Box display="flex" my={4} w="100%">
-        <Box display="flex" alignItems="center" flex={1}>
-          <Text>Rows per page:</Text>
+      <Box display="flex" my={4} w="100%" alignItems="center">
+        <Text>
+          Page {currentPage} of {totalPages} (Total {filteredTickets.length} tickets)
+        </Text>
+        <Box display="flex" alignItems="center" ml="auto">
           <Select
             width="80px"
             value={rowsPerPage}

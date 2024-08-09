@@ -14,10 +14,12 @@ import AddProjects from "./pages/AddProjects";
 import MaPage from "./pages/MaPage";
 import SupportTicket from "./pages/AddSupTick";
 import UserManageAcc from "./pages/ManagerAccount";
+
+// Extend the Chakra UI theme to use Noto Sans Thai
 const theme = extendTheme({
   fonts: {
-    heading: `'Inter', sans-serif`,
-    body: `'Inter', sans-serif`,
+    heading: `'Noto Sans Thai', sans-serif`,
+    body: `'Noto Sans Thai', sans-serif`,
   },
 });
 
@@ -45,8 +47,8 @@ const App: React.FC = () => {
               ></Route>
               <Route path="/projects/project" element={<AddProjects />}></Route>
               <Route path="/projects/projectma" element={<MaPage />}></Route>
-              <Route path="/support/ticket" element={<SupportTicket/>} />
-              <Route path="/user/manageacc" element={<UserManageAcc/>}></Route>
+              <Route path="/support/ticket" element={<SupportTicket />} />
+              <Route path="/user/manageacc" element={<UserManageAcc />}></Route>
             </Route>
           </Route>
           <Route path="*" element={<div>Page Not Found</div>} />

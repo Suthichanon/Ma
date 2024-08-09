@@ -219,7 +219,7 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
         const nextTicketId = lastTicketId
           ? `ST${(parseInt(lastTicketId.slice(2)) + 1)
               .toString()
-              .padStart(6, "0")}`
+              .padStart(lastTicketId.length - 2, "0")}` // ปรับความยาวตัวเลขตามความยาวของ Ticket ID ปัจจุบัน
           : "ST000001";
 
         newTicket.ticketId = nextTicketId;

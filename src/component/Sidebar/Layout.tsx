@@ -5,9 +5,9 @@ import { Outlet } from "react-router-dom";
 
 const Layout: React.FC = () => {
   return (
-    <Flex flexDirection={{ base: "column",lg:'row' }} minH={{base:'10vh',lg:"100vh"}} w={"100%"}>
+    <Flex flexDirection={{ base: "column",lg:'row' }} minH={{base:'10vh',lg:"100vh"}} w={"100%"} overflow={'hidden'}>
       <Sidebar />
-      <Box h={"100%"} w={"100%"} overflow={'hidden'}>
+      <Box h={"100%"} w={"100%"} overflow={'auto'} maxH={'100vh'}>
         <Outlet />
       </Box>
     </Flex>

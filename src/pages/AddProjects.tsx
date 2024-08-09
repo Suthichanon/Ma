@@ -55,6 +55,7 @@ const Projects: React.FC = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
   const { isOpen, onOpen, onClose } = useDisclosure();
   const {
     isOpen: isDeleteOpen,
@@ -176,7 +177,14 @@ const Projects: React.FC = () => {
 
   const totalPages = Math.ceil(projects.length / rowsPerPage);
   const startIndex = (currentPage - 1) * rowsPerPage;
-  const selectedProjects = projects.slice(startIndex, startIndex + rowsPerPage);
+  const selectedProjects = projects
+    .filter((project) =>
+      [project.projectId, project.projectName, project.customerName]
+        .join(" ")
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase())
+    )
+    .slice(startIndex, startIndex + rowsPerPage);
 
   const renderPageNumbers = () => {
     const pageNumbers = [];
@@ -216,7 +224,7 @@ const Projects: React.FC = () => {
         </Text>
       </Box>
       <Box display={"flex"} justifyContent={"space-between"} mb={4}>
-        <InputGroup width="300px">
+        <InputGroup width={{base:'100%',md:'500px'}}>
           <InputLeftElement
             pointerEvents="none"
             children={<SearchIcon color="gray.300" />}
@@ -224,12 +232,14 @@ const Projects: React.FC = () => {
           <Input
             type="text"
             placeholder="Project ID, Project Name, Customer Name"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
           />
         </InputGroup>
-        <Button
+        <Button 
           onClick={handleAddProject}
           leftIcon={<FaPlusSquare />}
-          colorScheme="red"
+          colorScheme="green"
           variant="solid"
           size="lg"
           bg={ColorBtn.AddBtnBg}
@@ -248,7 +258,7 @@ const Projects: React.FC = () => {
       <TableContainer
         border="1px solid"
         borderColor={ColorTable.TableBorder}
-        borderRadius="16px"
+        
       >
         <Table>
           <Thead bg={ColorTable.TableHead}>
@@ -322,9 +332,11 @@ const Projects: React.FC = () => {
         </Table>
       </TableContainer>
 
-      <Box display="flex" my={4} w="100%">
-        <Box display="flex" alignItems="center" flex={1}>
-          <Text>Rows per page:</Text>
+      <Box display="flex" my={4} w="100%" alignItems="center">
+        <Text>
+          Page {currentPage} of {totalPages} (Total {projects.length} projects)
+        </Text>
+        <Box display="flex" alignItems="center" ml="auto">
           <Select
             width="80px"
             value={rowsPerPage}
