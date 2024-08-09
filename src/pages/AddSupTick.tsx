@@ -14,6 +14,7 @@ import {
   Text,
   Button,
   IconButton,
+  Image,
   Menu,
   MenuButton,
   MenuList,
@@ -29,7 +30,7 @@ import {
   Select,
 } from "@chakra-ui/react";
 import { SearchIcon } from "@chakra-ui/icons";
-import { FaEllipsisH, FaPlusSquare } from "react-icons/fa";
+import { FaEllipsisH } from "react-icons/fa";
 import SupportTicketModal from "../component/modal/addTicket";
 import ViewTicketModal from "../component/modal/viewTicketModal";
 import { db } from "../firebase/firebaseAuth";
@@ -76,6 +77,7 @@ const SupportTickets: React.FC = () => {
   const [selectedTicket, setSelectedTicket] = useState<SupportTicket | null>(
     null
   );
+  const [isDeleting, setIsDeleting] = useState(false); // State for deletion status
   const cancelRef = React.useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -144,6 +146,7 @@ const SupportTickets: React.FC = () => {
     handleModalOpen(ticket, onViewOpen);
 
   const handleDelete = async (ticketId: string) => {
+    setIsDeleting(true); // Set deleting state to true when delete action starts
     try {
       await deleteDoc(doc(db, "supportTickets", ticketId));
       setTickets((prevTickets) => {
@@ -151,13 +154,11 @@ const SupportTickets: React.FC = () => {
           (ticket) => ticket.id !== ticketId
         );
 
-        // Check if the current page has no items left after deletion
         const totalRemainingItems = updatedTickets.length;
         const totalPagesAfterDeletion = Math.ceil(
           totalRemainingItems / rowsPerPage
         );
 
-        // If the current page is now empty and it's not the first page, go back one page
         if (currentPage > totalPagesAfterDeletion && currentPage > 1) {
           setCurrentPage(currentPage - 1);
         }
@@ -177,12 +178,13 @@ const SupportTickets: React.FC = () => {
       console.error("Error deleting ticket:", error);
       toast({
         title: "Error deleting ticket",
-        description:
-          "There was an issue deleting the ticket. Please try again.",
+        description: "There was an issue deleting the ticket. Please try again.",
         status: "error",
         duration: 3000,
         isClosable: true,
       });
+    } finally {
+      setIsDeleting(false); // Reset deleting state after deletion is done
     }
   };
 
@@ -268,7 +270,7 @@ const SupportTickets: React.FC = () => {
         </InputGroup>
         <Button
           onClick={handleAddTicket}
-          leftIcon={<FaPlusSquare />}
+          leftIcon={<Image src="/addicon.png" alt="Add Icon" boxSize="24px" />}
           colorScheme="green"
           variant="solid"
           size="lg"
@@ -285,11 +287,7 @@ const SupportTickets: React.FC = () => {
         />
       </Box>
 
-      <TableContainer
-        border="1px solid"
-        borderColor={ColorTable.TableBorder}
-        
-      >
+      <TableContainer border="1px solid" borderColor={ColorTable.TableBorder}>
         <Table>
           <Thead bg={ColorTable.TableHead}>
             <Tr>
@@ -397,7 +395,8 @@ const SupportTickets: React.FC = () => {
 
       <Box display="flex" my={4} w="100%" alignItems="center">
         <Text>
-          Page {currentPage} of {totalPages} (Total {filteredTickets.length} tickets)
+          Page {currentPage} of {totalPages} (Total {filteredTickets.length}{" "}
+          tickets)
         </Text>
         <Box display="flex" alignItems="center" ml="auto">
           <Select
@@ -449,10 +448,16 @@ const SupportTickets: React.FC = () => {
               undone.
             </AlertDialogBody>
             <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={onDeleteClose}>
+              <Button ref={cancelRef} onClick={onDeleteClose} isDisabled={isDeleting}>
                 Cancel
               </Button>
-              <Button colorScheme="red" onClick={confirmDelete} ml={3}>
+              <Button
+                colorScheme="red"
+                onClick={confirmDelete}
+                ml={3}
+                isLoading={isDeleting} // Show loading spinner while deleting
+                isDisabled={isDeleting} // Disable button while deleting
+              >
                 Delete
               </Button>
             </AlertDialogFooter>

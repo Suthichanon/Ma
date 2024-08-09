@@ -75,6 +75,20 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
   onClose,
 }) => {
   const toast = useToast();
+  const tooltips: { [key: string]: string } = {
+    "User Error":
+      "การใช้งานผิดวิธี: ผู้ใช้ไม่เข้าใจวิธีการใช้งานหรือป้อนข้อมูลผิดพลาด",
+    "System Bugs":
+      "ข้อผิดพลาด: ทำให้ระบบล่มหรือหยุดทำงาน ส่งผลต่อการทำงานของระบบ แต่ยังใช้งานได้บางส่วน",
+    "Performance Issues":
+      "ระบบช้า: ทำงานช้ากว่าปกติ ส่งผลให้การทำงานล่าช้า ระบบใช้ทรัพยากรเครื่องมากเกินไป",
+    "Integration Issues":
+      "การเชื่อมต่อล้มเหลว: ระบบไม่สามารถเชื่อมต่อกับซอฟต์แวร์หรือระบบอื่นๆ ได้",
+    "Data Issues":
+      "ข้อมูลสูญหาย: ข้อมูลหายไปจากระบบ หรือไม่ถูกต้อง ไม่สามารถเข้าถึงข้อมูลได้",
+    "Security Issues":
+      "การเจาะระบบ: ระบบถูกโจมตีหรือเข้าถึงโดยไม่ได้รับอนุญาต ข้อมูลถูกเปิดเผยหรือขโมย",
+  };
   const [formData, setFormData] = useState<SupportTicket>({
     ticketId: "",
     maNumber: "",
@@ -91,21 +105,6 @@ const SupportTicketModal: React.FC<SupportTicketModalProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [isFormValid, setIsFormValid] = useState(false); // State for form validation
   const [errors, setErrors] = useState<Partial<SupportTicket>>({});
-
-  const tooltips: { [key: string]: string } = {
-    "User Error":
-      "การใช้งานผิดวิธี: ผู้ใช้ไม่เข้าใจวิธีการใช้งานหรือป้อนข้อมูลผิดพลาด",
-    "System Bugs":
-      "ข้อผิดพลาด: ทำให้ระบบล่มหรือหยุดทำงาน ส่งผลต่อการทำงานของระบบ แต่ยังใช้งานได้บางส่วน",
-    "Performance Issues":
-      "ระบบช้า: ทำงานช้ากว่าปกติ ส่งผลให้การทำงานล่าช้า ระบบใช้ทรัพยากรเครื่องมากเกินไป",
-    "Integration Issues":
-      "การเชื่อมต่อล้มเหลว: ระบบไม่สามารถเชื่อมต่อกับซอฟต์แวร์หรือระบบอื่นๆ ได้",
-    "Data Issues":
-      "ข้อมูลสูญหาย: ข้อมูลหายไปจากระบบ หรือไม่ถูกต้อง ไม่สามารถเข้าถึงข้อมูลได้",
-    "Security Issues":
-      "การเจาะระบบ: ระบบถูกโจมตีหรือเข้าถึงโดยไม่ได้รับอนุญาต ข้อมูลถูกเปิดเผยหรือขโมย",
-  };
 
   useEffect(() => {
     if (ticket) {

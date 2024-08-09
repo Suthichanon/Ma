@@ -14,6 +14,7 @@ import {
   Text,
   Grid,
   IconButton,
+  Image,
   Menu,
   MenuButton,
   MenuList,
@@ -31,7 +32,7 @@ import {
 } from "@chakra-ui/react";
 import { SearchIcon } from "@chakra-ui/icons";
 import { ColorTable, ColorBtn } from "../component/templatecolor";
-import { FaEllipsisH, FaPlusSquare } from "react-icons/fa";
+import { FaEllipsisH } from "react-icons/fa";
 import { useLocation } from "react-router-dom";
 import CustomerModal from "../component/modal/addCustomer";
 import ViewCustomerModal from "../component/modal/viewCustomerModal";
@@ -60,7 +61,6 @@ interface Customer {
 }
 
 const Customers: React.FC = () => {
-  
   const location = useLocation();
   const pathname = location.pathname.replace(/\//g, " ");
   const toast = useToast();
@@ -109,9 +109,15 @@ const Customers: React.FC = () => {
   useEffect(() => {
     const filtered = customers.filter(
       (customer) =>
-        (customer.customerId ?? "").toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        customer.taxIdOrIdCard.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (customer.customerId ?? "")
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        customer.customerName
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        customer.taxIdOrIdCard
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
         (customer.idCard && customer.idCard.includes(searchQuery))
     );
     setFilteredCustomers(filtered);
@@ -278,7 +284,7 @@ const Customers: React.FC = () => {
       </Box>
       <Box mb={4}>
         <Grid templateColumns={{ base: "1fr", md: "1fr auto" }} gap={4}>
-          <InputGroup width={{base:'100%',md:'500px'}}>
+          <InputGroup width={{ base: "100%", md: "500px" }}>
             <InputLeftElement
               pointerEvents="none"
               children={<SearchIcon color="gray.300" />}
@@ -292,7 +298,9 @@ const Customers: React.FC = () => {
           </InputGroup>
           <Button
             onClick={handleAddCustomer}
-            leftIcon={<FaPlusSquare />}
+            leftIcon={
+              <Image src="/addicon.png" alt="Add Icon" boxSize="24px" />
+            }
             colorScheme="green"
             variant="solid"
             size="lg"
@@ -315,11 +323,7 @@ const Customers: React.FC = () => {
         </Grid>
       </Box>
 
-      <TableContainer
-        border="1px solid"
-        borderColor={ColorTable.TableBorder}
-        
-      >
+      <TableContainer border="1px solid" borderColor={ColorTable.TableBorder}>
         <Table>
           <Thead bg={ColorTable.TableHead}>
             <Tr>
@@ -432,7 +436,8 @@ const Customers: React.FC = () => {
       </TableContainer>
       <Box display={"flex"} my={4} w={"100%"} alignItems="center">
         <Text>
-          Page {currentPage} of {totalPages} (Total {filteredCustomers.length} customers)
+          Page {currentPage} of {totalPages} (Total {filteredCustomers.length}{" "}
+          customers)
         </Text>
         <Box display="flex" alignItems="center" ml="auto">
           <Select

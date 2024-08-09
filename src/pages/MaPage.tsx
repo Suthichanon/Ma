@@ -14,6 +14,7 @@ import {
   Text,
   Button,
   IconButton,
+  Image,
   Menu,
   MenuButton,
   MenuList,
@@ -29,7 +30,7 @@ import {
   Select,
 } from "@chakra-ui/react";
 import { SearchIcon } from "@chakra-ui/icons";
-import { FaEllipsisH, FaPlusSquare } from "react-icons/fa";
+import { FaEllipsisH } from "react-icons/fa";
 import MaintenanceAgreementModal from "../component/modal/addMa";
 import { db } from "../firebase/firebaseAuth";
 import {
@@ -43,7 +44,6 @@ import {
 } from "firebase/firestore";
 import { ColorTable, ColorBtn } from "../component/templatecolor";
 import dayjs from "dayjs";
-
 
 interface MaintenanceAgreement {
   id?: string;
@@ -77,41 +77,40 @@ const MaintenanceAgreements: React.FC = () => {
 
   const fetchAgreements = async () => {
     const querySnapshot = await getDocs(
-        query(collection(db, "maintenanceAgreements"), orderBy("maNumber"))
+      query(collection(db, "maintenanceAgreements"), orderBy("maNumber"))
     );
 
     const agreementList = querySnapshot.docs.map((doc) => {
-        const data = doc.data() as MaintenanceAgreement;
-        const endDate = dayjs(data.endDate.toDate());
-        const startDate = dayjs(data.startDate.toDate());
-        const now = dayjs();
+      const data = doc.data() as MaintenanceAgreement;
+      const endDate = dayjs(data.endDate.toDate());
+      const startDate = dayjs(data.startDate.toDate());
+      const now = dayjs();
 
-        // Calculate remaining days from now to end date
-        const remainingDays = endDate.diff(now, "day");
+      // Calculate remaining days from now to end date
+      const remainingDays = endDate.diff(now, "day");
 
-        // Calculate maturity in months from start date to end date
-        const maturityMonths = endDate.diff(startDate, "month");
+      // Calculate maturity in months from start date to end date
+      const maturityMonths = endDate.diff(startDate, "month");
 
-        // Determine status based on remaining days
-        let status = "expire";
-        if (remainingDays > 60) {
-            status = "active";
-        } else if (remainingDays > 0 && remainingDays <= 60) {
-            status = "duration";
-        }
+      // Determine status based on remaining days
+      let status = "expire";
+      if (remainingDays > 60) {
+        status = "active";
+      } else if (remainingDays > 0 && remainingDays <= 60) {
+        status = "duration";
+      }
 
-        return {
-            ...data,
-            id: doc.id,
-            remaining: `${remainingDays} DAY${remainingDays !== 1 ? "S" : ""}`,
-            maturity: `${maturityMonths} MONTH${maturityMonths !== 1 ? "S" : ""}`,
-            status: status,
-        };
+      return {
+        ...data,
+        id: doc.id,
+        remaining: `${remainingDays} DAY${remainingDays !== 1 ? "S" : ""}`,
+        maturity: `${maturityMonths} MONTH${maturityMonths !== 1 ? "S" : ""}`,
+        status: status,
+      };
     });
 
     setAgreements(agreementList);
-};
-
+  };
 
   useEffect(() => {
     fetchAgreements();
@@ -210,7 +209,9 @@ const MaintenanceAgreements: React.FC = () => {
   const filteredAgreements = agreements.filter(
     (agreement) =>
       agreement.maNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      agreement.projectName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      agreement.projectName
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
       agreement.customerName?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
@@ -249,55 +250,52 @@ const MaintenanceAgreements: React.FC = () => {
     }
     return pageNumbers;
   };
-  
-  
 
   const getStatusButton = (remaining: string | undefined): JSX.Element => {
     if (!remaining) {
-        remaining = "0 DAYS"; // Default value when remaining is undefined
+      remaining = "0 DAYS"; // Default value when remaining is undefined
     }
 
     const days = parseInt(remaining.split(" ")[0], 10);
 
     if (days > 60) {
-        return (
-            <Button
-                w={"100%"}
-                color={"white"}
-                backgroundColor="#01B574"
-                _hover={{ backgroundColor: "#01A367" }}
-                pointerEvents={"none"}
-            >
-                Active
-            </Button>
-        );
+      return (
+        <Button
+          w={"100%"}
+          color={"white"}
+          backgroundColor="#01B574"
+          _hover={{ backgroundColor: "#01A367" }}
+          pointerEvents={"none"}
+        >
+          Active
+        </Button>
+      );
     } else if (days > 0 && days <= 60) {
-        return (
-            <Button
-                w={"100%"}
-                color={"white"}
-                backgroundColor="#FFB547"
-                _hover={{ backgroundColor: "#E5A23A" }}
-                pointerEvents={"none"}
-            >
-                Duration
-            </Button>
-        );
+      return (
+        <Button
+          w={"100%"}
+          color={"white"}
+          backgroundColor="#FFB547"
+          _hover={{ backgroundColor: "#E5A23A" }}
+          pointerEvents={"none"}
+        >
+          Duration
+        </Button>
+      );
     } else {
-        return (
-            <Button
-                w={"100%"}
-                color={"white"}
-                backgroundColor="#E31A1A"
-                _hover={{ backgroundColor: "#CC1717" }}
-                pointerEvents={"none"}
-            >
-                Expire
-            </Button>
-        );
+      return (
+        <Button
+          w={"100%"}
+          color={"white"}
+          backgroundColor="#E31A1A"
+          _hover={{ backgroundColor: "#CC1717" }}
+          pointerEvents={"none"}
+        >
+          Expire
+        </Button>
+      );
     }
-};
-   
+  };
 
   return (
     <Box minH="100%" minW="100%" px={{ base: 2, lg: 12 }}>
@@ -322,7 +320,7 @@ const MaintenanceAgreements: React.FC = () => {
         </InputGroup>
         <Button
           onClick={handleAddAgreement}
-          leftIcon={<FaPlusSquare />}
+          leftIcon={<Image src="/addicon.png" alt="Add Icon" boxSize="24px" />}
           colorScheme="green"
           variant="solid"
           size="lg"
@@ -340,11 +338,7 @@ const MaintenanceAgreements: React.FC = () => {
         />
       </Box>
 
-      <TableContainer
-        border="1px solid"
-        borderColor={ColorTable.TableBorder}
-        
-      >
+      <TableContainer border="1px solid" borderColor={ColorTable.TableBorder}>
         <Table>
           <Thead bg={ColorTable.TableHead}>
             <Tr>

@@ -14,6 +14,7 @@ import {
   Text,
   Button,
   IconButton,
+  Image,
   Menu,
   MenuButton,
   MenuList,
@@ -29,7 +30,7 @@ import {
   Select,
 } from "@chakra-ui/react";
 import { SearchIcon } from "@chakra-ui/icons";
-import { FaEllipsisH, FaPlusSquare } from "react-icons/fa";
+import { FaEllipsisH } from "react-icons/fa";
 import ProjectModal from "../component/modal/addProject";
 import { db } from "../firebase/firebaseAuth";
 import {
@@ -238,7 +239,9 @@ const Projects: React.FC = () => {
         </InputGroup>
         <Button 
           onClick={handleAddProject}
-          leftIcon={<FaPlusSquare />}
+          leftIcon={
+            <Image src="/addicon.png" alt="Add Icon" boxSize="24px" />
+          }
           colorScheme="green"
           variant="solid"
           size="lg"
